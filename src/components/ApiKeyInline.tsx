@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  AI_PROVIDERS,
+  AIProvider,
+  getStoredProvider,
+  getProviderConfig,
+  getStoredApiKey,
+} from "@/services/aiProvider";
 
 interface ApiKeyInlineProps {
   onKeyChange?: (hasKey: boolean) => void;
@@ -10,23 +17,36 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
   const [hasKey, setHasKey] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [keyValue, setKeyValue] = useState("");
+  const [provider, setProvider] = useState<AIProvider>("gemini");
 
   useEffect(() => {
-    const stored = localStorage.getItem("gemini_api_key");
+    const storedProvider = getStoredProvider();
+    const stored = getStoredApiKey(storedProvider);
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProvider(storedProvider);
     setHasKey(!!stored);
     setExpanded(!stored);
   }, []);
 
-  const saveKey = useCallback((value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    localStorage.setItem("gemini_api_key", trimmed);
-    setHasKey(true);
-    setExpanded(false);
-    setKeyValue("");
-    onKeyChange?.(true);
-  }, [onKeyChange]);
+  const config = getProviderConfig(provider);
+
+  const saveKey = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      localStorage.setItem("ai_provider", provider);
+      if (provider === "gemini") {
+        localStorage.setItem("gemini_api_key", trimmed);
+      } else {
+        localStorage.setItem(`${provider}_api_key`, trimmed);
+      }
+      setHasKey(true);
+      setExpanded(false);
+      setKeyValue("");
+      onKeyChange?.(true);
+    },
+    [onKeyChange, provider]
+  );
 
   const handleSave = () => {
     saveKey(keyValue);
@@ -43,6 +63,13 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
     setKeyValue("");
   };
 
+  const handleProviderChange = (newProvider: AIProvider) => {
+    setProvider(newProvider);
+    const stored = getStoredApiKey(newProvider);
+    setHasKey(!!stored);
+    setKeyValue("");
+  };
+
   if (!expanded && hasKey) {
     return (
       <div className="api-key-inline">
@@ -50,9 +77,9 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
           type="button"
           className="api-key-badge"
           onClick={handleBadgeClick}
-          aria-label="API Key configured. Click to change."
+          aria-label={`${config.name} Key configured. Click to change.`}
         >
-          API Key configured &#10003;
+          {config.name} Key configured &#10003;
         </button>
 
         <style jsx>{`
@@ -84,17 +111,33 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
     <div className="api-key-inline">
       <div className="api-key-section">
         <p className="api-key-instruction">
-          To run audits, you need a free Google Gemini API key
+          To run audits, you need an API key from your chosen AI provider
         </p>
+        <div className="api-key-provider-row">
+          <select
+            className="input api-key-provider-select"
+            value={provider}
+            onChange={(e) =>
+              handleProviderChange(e.target.value as AIProvider)
+            }
+            aria-label="AI Provider"
+          >
+            {AI_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="api-key-input-row">
           <input
             type="password"
             className="input api-key-input"
-            placeholder="Paste your Gemini API key"
+            placeholder={`Paste your ${config.name} API key`}
             value={keyValue}
             onChange={(e) => setKeyValue(e.target.value)}
             onBlur={handleBlur}
-            aria-label="Gemini API Key"
+            aria-label={`${config.name} API Key`}
           />
           <button
             type="button"
@@ -105,7 +148,7 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
           </button>
         </div>
         <a
-          href="https://aistudio.google.com/"
+          href={config.getKeyUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="api-key-link"
@@ -129,6 +172,13 @@ export default function ApiKeyInline({ onKeyChange }: ApiKeyInlineProps) {
           color: var(--text-muted);
           font-size: 0.85rem;
           margin-bottom: 0.75rem;
+        }
+        .api-key-provider-row {
+          margin-bottom: 0.5rem;
+        }
+        .api-key-provider-select {
+          width: 100%;
+          font-size: 0.85rem;
         }
         .api-key-input-row {
           display: flex;

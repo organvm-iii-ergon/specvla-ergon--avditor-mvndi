@@ -36,7 +36,7 @@ describe('HomePage', () => {
     
     fireEvent.click(screen.getByRole('button', { name: /Generate Cosmic Audit/i }));
     
-    expect(screen.getByText('Please configure your Gemini API key in Settings first.')).toBeInTheDocument();
+    expect(screen.getByText('Please configure your AI provider API key in Settings first.')).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
   });
 

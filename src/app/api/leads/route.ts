@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { saveLead } from "@/lib/db";
 import { createRateLimiter, getClientIP } from "@/lib/rate-limit";
+import { sendLeadAlertEmail } from "@/services/email";
 
 const limiter = createRateLimiter({ max: 10, windowMs: 60 * 60 * 1000 });
 
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
     }
 
     await saveLead(email, auditId, source || "audit_gate");
+
+    sendLeadAlertEmail(email, auditId).catch(() => {}); // fire and forget
 
     return NextResponse.json({ success: true });
   } catch (err) {

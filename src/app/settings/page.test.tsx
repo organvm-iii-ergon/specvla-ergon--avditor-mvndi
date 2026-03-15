@@ -34,7 +34,7 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Save Configuration/i }));
     
     expect(localStorage.getItem('gemini_api_key')).toBe('new-gemini-key');
-    expect(screen.getByRole('button')).toHaveTextContent('Key Saved! ✓');
+    expect(screen.getByRole('button')).toHaveTextContent('Configuration Saved! ✓');
     
     act(() => {
       vi.advanceTimersByTime(3000);

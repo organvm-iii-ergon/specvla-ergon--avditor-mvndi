@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ApiKeyInline from "@/components/ApiKeyInline";
+import { getStoredApiKey } from "@/services/aiProvider";
 
 // A simple moon phase calculation based on known new moon date
 function getMoonPhase() {
@@ -55,10 +56,10 @@ export default function HomePage() {
     setLoading(true);
     setError("");
 
-    const geminiKey = localStorage.getItem("gemini_api_key");
+    const apiKey = getStoredApiKey(); // allow-secret
 
-    if (!geminiKey) {
-      setError("Please configure your Gemini API key in Settings first.");
+    if (!apiKey) {
+      setError("Please configure your AI provider API key in Settings first.");
       setLoading(false);
       return;
     }

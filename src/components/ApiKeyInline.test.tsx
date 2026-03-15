@@ -22,22 +22,22 @@ describe('ApiKeyInline Component', () => {
 
   it('shows expanded state when no key in localStorage', () => {
     render(<ApiKeyInline />);
-    expect(screen.getByText(/To run audits, you need a free Google Gemini API key/)).toBeInTheDocument();
-    expect(screen.getByLabelText('Gemini API Key')).toBeInTheDocument();
+    expect(screen.getByText(/To run audits, you need an API key from your chosen AI provider/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Google Gemini API Key')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
     expect(screen.getByText(/Get a free key/)).toBeInTheDocument();
   });
 
   it('shows badge when key exists in localStorage', () => {
-    localStorageMock.getItem.mockReturnValueOnce('test-api-key');
+    localStorageMock.setItem('gemini_api_key', 'test-api-key');
     render(<ApiKeyInline />);
-    expect(screen.getByLabelText(/API Key configured/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Google Gemini Key configured/)).toBeInTheDocument();
     expect(screen.queryByText(/To run audits/)).not.toBeInTheDocument();
   });
 
   it('saves key to localStorage on save button click', () => {
     render(<ApiKeyInline />);
-    const input = screen.getByLabelText('Gemini API Key');
+    const input = screen.getByLabelText('Google Gemini API Key');
     const saveBtn = screen.getByRole('button', { name: 'Save' });
 
     fireEvent.change(input, { target: { value: 'my-new-key' } });
@@ -45,13 +45,13 @@ describe('ApiKeyInline Component', () => {
 
     expect(localStorageMock.setItem).toHaveBeenCalledWith('gemini_api_key', 'my-new-key');
     // After saving, should show badge
-    expect(screen.getByLabelText(/API Key configured/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Google Gemini Key configured/)).toBeInTheDocument();
   });
 
   it('calls onKeyChange callback when key is saved', () => {
     const onKeyChange = vi.fn();
     render(<ApiKeyInline onKeyChange={onKeyChange} />);
-    const input = screen.getByLabelText('Gemini API Key');
+    const input = screen.getByLabelText('Google Gemini API Key');
     const saveBtn = screen.getByRole('button', { name: 'Save' });
 
     fireEvent.change(input, { target: { value: 'callback-key' } });

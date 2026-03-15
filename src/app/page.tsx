@@ -3,6 +3,28 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+// A simple moon phase calculation based on known new moon date
+function getMoonPhase() {
+  // Known new moon: Jan 11, 2024
+  const LUNAR_MONTH = 29.53058867;
+  const KNOWN_NEW_MOON = new Date("2024-01-11T11:57:00Z").getTime();
+  const now = Date.now();
+  
+  const diff = now - KNOWN_NEW_MOON;
+  const days = diff / (1000 * 60 * 60 * 24);
+  const phase = days % LUNAR_MONTH;
+  
+  if (phase < 1.84) return "New Moon (Sowing Seeds)";
+  if (phase < 5.53) return "Waxing Crescent (Gathering Momentum)";
+  if (phase < 9.22) return "First Quarter (Taking Action)";
+  if (phase < 12.91) return "Waxing Gibbous (Refining Strategy)";
+  if (phase < 16.61) return "Full Moon (Peak Manifestation)";
+  if (phase < 20.30) return "Waning Gibbous (Releasing Resistance)";
+  if (phase < 23.99) return "Last Quarter (Pivoting)";
+  if (phase < 27.68) return "Waning Crescent (Rest & Integration)";
+  return "New Moon (Sowing Seeds)";
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -15,16 +37,7 @@ export default function HomePage() {
   const [planetaryWindow, setPlanetaryWindow] = useState("");
 
   useEffect(() => {
-    // Fun astrology element: Calculate a "Planetary Growth Window" based on current time
-    const windows = [
-      "Mercury's Peak (Communication is favored)",
-      "Jupiter's Expansion (Abundance is rising)",
-      "Mars' Drive (Action-oriented results)",
-      "Venus' Harmony (Brand aesthetic is key)",
-      "Saturn's Structure (Foundation building)"
-    ];
-    const randomWindow = windows[Math.floor(Math.random() * windows.length)];
-    setPlanetaryWindow(randomWindow);
+    setPlanetaryWindow(getMoonPhase());
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,24 +46,33 @@ export default function HomePage() {
     setError("");
 
     const geminiKey = localStorage.getItem("gemini_api_key");
-    const openaiKey = localStorage.getItem("openai_api_key");
 
-    if (!geminiKey && !openaiKey) {
-      setError("Please configure your API keys in Settings first.");
+    if (!geminiKey) {
+      setError("Please configure your Gemini API key in Settings first.");
       setLoading(false);
       return;
     }
 
-    const auditRequest = { ...formData, geminiKey, openaiKey };
+    const auditRequest = { 
+      link: formData.link, 
+      businessType: formData.businessType, 
+      goals: formData.goals 
+    };
+    
+    // Store only the form data in sessionStorage, NOT the API key
     sessionStorage.setItem("current_audit_request", JSON.stringify(auditRequest));
+    
+    // Clear any previous cached result to force a fresh run
+    sessionStorage.removeItem("current_audit_result");
+    
     router.push("/results");
   };
 
   return (
     <main className="main">
       <div className="hero">
-        <div className="astro-badge">
-          <span>✧</span>
+        <div className="astro-badge" aria-label="Current Planetary Window">
+          <span aria-hidden="true">✧</span>
           {planetaryWindow}
         </div>
         <h1>Growth Auditor AI</h1>
@@ -71,6 +93,8 @@ export default function HomePage() {
                 className="input" 
                 placeholder="https://yourwebsite.com" 
                 required
+                aria-required="true"
+                aria-label="Website URL or Social Handle"
                 value={formData.link}
                 onChange={(e) => setFormData({ ...formData, link: e.target.value })}
               />
@@ -84,6 +108,8 @@ export default function HomePage() {
                 className="input" 
                 placeholder="e.g., Creative Studio, E-commerce" 
                 required
+                aria-required="true"
+                aria-label="Business Domain or Niche"
                 value={formData.businessType}
                 onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
               />
@@ -97,14 +123,20 @@ export default function HomePage() {
                 style={{ minHeight: "100px", resize: "none" }}
                 placeholder="What growth goals are you aiming for?" 
                 required
+                aria-required="true"
+                aria-label="Target Growth Goals"
                 value={formData.goals}
                 onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
               />
             </div>
 
-            {error && <p style={{ color: "var(--accent)", marginBottom: "1.5rem", fontSize: "0.9rem", textAlign: "center" }}>{error}</p>}
+            {error && (
+              <p role="alert" style={{ color: "var(--accent)", marginBottom: "1.5rem", fontSize: "0.9rem", textAlign: "center" }}>
+                {error}
+              </p>
+            )}
 
-            <button type="submit" className="btn" disabled={loading}>
+            <button type="submit" className="btn" disabled={loading} aria-busy={loading}>
               {loading ? "Aligning Data..." : "Generate Cosmic Audit"}
             </button>
           </form>

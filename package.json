@@ -11,15 +11,31 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@ai-sdk/google": "3.0.43",
+    "@ai-sdk/react": "3.0.118",
     "@google/generative-ai": "0.24.1",
+    "@supabase/supabase-js": "2.99.1",
+    "@vercel/og": "0.11.1",
+    "ai": "6.0.116",
+    "better-sqlite3": "12.8.0",
+    "cheerio": "1.2.0",
+    "html2pdf.js": "0.14.0",
+    "lru-cache": "11.2.6",
     "next": "16.1.6",
+    "next-auth": "5.0.0-beta.30",
+    "posthog-js": "1.360.2",
+    "puppeteer": "24.38.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-markdown": "10.1.0"
+    "react-markdown": "10.1.0",
+    "recharts": "3.8.0",
+    "resend": "6.9.3",
+    "stripe": "20.4.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
+    "@types/better-sqlite3": "7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

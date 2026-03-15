@@ -1,0 +1,42 @@
+export default function ExamplesPage() {
+  return (
+    <main className="main">
+      <div className="hero">
+        <div className="astro-badge">
+          <span aria-hidden="true">✧</span>
+          Case Studies
+        </div>
+        <h1>Cosmic Growth in Action</h1>
+        <p>See how the Oracle decodes top brands.</p>
+      </div>
+
+      <div className="container" style={{ maxWidth: "900px", display: "grid", gap: "2rem" }}>
+        <div className="card">
+          <h2 style={{ color: "var(--secondary)", marginBottom: "0.5rem" }}>Acme Corp SaaS</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>B2B Software • Scored 82/100</p>
+          
+          <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "12px", marginBottom: "1rem" }}>
+            <h4 style={{ color: "#fff", marginBottom: "0.5rem" }}>Mercury Retrograde (Bottleneck)</h4>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
+              The hero copy ("Synergistic Cloud Solutions") lacked clarity. After the audit, they pivoted to a direct outcome-based H1 ("Save 10 Hours a Week on Payroll"), increasing conversions by 40%.
+            </p>
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", padding: "0.5rem 1.5rem" }}>View Full Audit</button>
+        </div>
+
+        <div className="card">
+          <h2 style={{ color: "var(--secondary)", marginBottom: "0.5rem" }}>Zenith Creatives</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>Design Agency • Scored 94/100</p>
+          
+          <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "12px", marginBottom: "1rem" }}>
+            <h4 style={{ color: "#fff", marginBottom: "0.5rem" }}>Venus Alignment (Strength)</h4>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
+              Perfect aesthetic scoring, but their Saturn structure was failing. Page load times were over 5s. Optimizing their portfolio images resolved the bounce rate issue immediately.
+            </p>
+          </div>
+          <button className="btn btn-secondary" style={{ width: "auto", padding: "0.5rem 1.5rem" }}>View Full Audit</button>
+        </div>
+      </div>
+    </main>
+  );
+}

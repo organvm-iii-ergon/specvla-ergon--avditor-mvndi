@@ -1,21 +1,66 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import Loader from "@/components/Loader";
 import UpsellCard from "@/components/UpsellCard";
+import CosmicChart from "@/components/CosmicChart";
+import ChatBox from "@/components/ChatBox";
 
 export default function ResultsPage() {
   const [audit, setAudit] = useState("");
+  const [scores, setScores] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const downloadPDF = async () => {
+    if (!reportRef.current) return;
+    setIsDownloading(true);
+    
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const opt: any = {
+        margin: 1,
+        filename: 'Cosmic_Growth_Audit.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#050a15' },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(reportRef.current).save();
+    } catch (err) {
+      console.error("PDF Generation failed", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
     const runAudit = async () => {
+      // 1. Check for cached result first
+      const cachedResult = sessionStorage.getItem("current_audit_result");
+      const cachedScores = sessionStorage.getItem("current_audit_scores");
+      if (cachedResult && cachedScores) {
+        setAudit(cachedResult);
+        setScores(JSON.parse(cachedScores));
+        setLoading(false);
+        return;
+      }
+
+      // 2. No cache, we must fetch
       const data = sessionStorage.getItem("current_audit_request");
       if (!data) {
         setError("No audit data found. Please start from the home page.");
+        setLoading(false);
+        return;
+      }
+
+      const geminiKey = localStorage.getItem("gemini_api_key");
+      if (!geminiKey) {
+        setError("API Key not found. Please configure it in settings.");
         setLoading(false);
         return;
       }
@@ -25,16 +70,24 @@ export default function ResultsPage() {
       try {
         const response = await fetch("/api/audit", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${geminiKey}`
+          },
           body: JSON.stringify(parsedData),
         });
 
         const result = await response.json();
-        if (result.error) {
-          throw new Error(result.error);
+        
+        if (!response.ok || result.error) {
+          throw new Error(result.error || `HTTP error! status: ${response.status}`);
         }
 
         setAudit(result.audit);
+        setScores(result.scores);
+        // Cache the successful result
+        sessionStorage.setItem("current_audit_result", result.audit);
+        sessionStorage.setItem("current_audit_scores", JSON.stringify(result.scores));
       } catch (err: any) {
         setError(err.message || "Failed to generate audit. Please check your API keys.");
       } finally {
@@ -47,10 +100,10 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <main className="main">
+      <main className="main" aria-live="polite" aria-busy="true">
         <div className="hero">
           <div className="astro-badge" style={{ animation: "pulse-slow 2s infinite" }}>
-            <span>✧</span>
+            <span aria-hidden="true">✧</span>
             Aligning with the Stars
           </div>
           <h1>Calculating Cosmic ROI...</h1>
@@ -65,10 +118,10 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <main className="main">
+      <main className="main" aria-live="assertive">
         <div className="card" style={{ borderColor: "var(--accent)" }}>
           <h2 style={{ color: "var(--secondary)", marginBottom: "1rem" }}>Retrograde Detected</h2>
-          <p>{error}</p>
+          <p role="alert">{error}</p>
           <Link href="/" className="btn" style={{ marginTop: "2rem", display: "block", textAlign: "center" }}>
             Try Again
           </Link>
@@ -78,22 +131,37 @@ export default function ResultsPage() {
   }
 
   return (
-    <main className="main">
+    <main className="main" aria-live="polite">
       <div className="hero">
         <div className="astro-badge">
-          <span>✦</span>
+          <span aria-hidden="true">✦</span>
           Audit Manifested
         </div>
         <h1>Your Growth Strategy</h1>
         <p>A data-backed cosmic roadmap for your digital presence.</p>
+        <button onClick={downloadPDF} disabled={isDownloading} className="btn btn-secondary" style={{ marginTop: "1.5rem", maxWidth: "250px", margin: "1.5rem auto 0" }}>
+          {isDownloading ? "Generating PDF..." : "Download as PDF"}
+        </button>
       </div>
 
       <div className="container" style={{ width: "100%", maxWidth: "900px" }}>
-        <div className="card" style={{ maxWidth: "none", marginBottom: "4rem", padding: "4rem" }}>
-          <div className="audit-content">
-            <ReactMarkdown>{audit}</ReactMarkdown>
+        
+        <div ref={reportRef} style={{ background: "var(--background)", padding: "1px" }}>
+          {scores && (
+            <div className="card" style={{ maxWidth: "none", marginBottom: "2rem", padding: "2rem" }}>
+              <h2 style={{ textAlign: "center", marginBottom: "1rem", color: "var(--secondary)" }}>Planetary Alignment Score</h2>
+              <CosmicChart scores={scores} />
+            </div>
+          )}
+
+          <div className="card" style={{ maxWidth: "none", marginBottom: "4rem", padding: "4rem" }}>
+            <div className="audit-content">
+              <ReactMarkdown>{audit}</ReactMarkdown>
+            </div>
           </div>
         </div>
+
+        <ChatBox auditContext={audit} />
 
         <div className="upsell-section" style={{ textAlign: "center", marginBottom: "6rem" }}>
           <h2 style={{ marginBottom: "3rem", fontSize: "2.5rem", letterSpacing: "-0.04em" }}>Ready to Manifest?</h2>

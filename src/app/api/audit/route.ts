@@ -1,53 +1,131 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { scrapeWebsite } from "@/services/scraper";
+import { getCosmicAuditPrompt } from "@/services/promptTemplates";
+import { captureScreenshot } from "@/services/vision";
+import { getPageSpeedInsights } from "@/services/pagespeed";
+import { saveAudit } from "@/lib/db";
+import crypto from "crypto";
+import { auth } from "@/auth";
+import { LRUCache } from "lru-cache";
+
+// Simple IP-based rate limiter (5 per hour)
+const rateLimit = new LRUCache({
+  max: 500, // max 500 IPs
+  ttl: 1000 * 60 * 60, // 1 hour
+});
 
 export async function POST(request: Request) {
   try {
-    const { link, businessType, goals, geminiKey } = await request.json();
+    // 0. Rate limiting (using a generic IP if headers fail)
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const currentUsage = (rateLimit.get(ip) as number) || 0;
+    
+    if (currentUsage >= 5) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please wait before generating more audits." }, { status: 429 });
+    }
+    rateLimit.set(ip, currentUsage + 1);
 
-    if (!geminiKey) {
-      return NextResponse.json({ error: "Gemini API Key is required" }, { status: 400 });
+    // 1. Extract API Key from Authorization header securely
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Missing or invalid Authorization header. Please configure your Gemini API Key in Settings." }, { status: 401 });
+    }
+    
+    const geminiKey = authHeader.split(" ")[1];
+
+    const { link, businessType, goals } = await request.json();
+
+    if (!link || !businessType || !goals) {
+      return NextResponse.json({ error: "Missing required fields: link, businessType, goals." }, { status: 400 });
     }
 
+    const session = await auth();
+
+    // 2. Fetch context in parallel to save time
+    const [scrapedContent, screenshotBase64, seoData] = await Promise.all([
+      scrapeWebsite(link),
+      captureScreenshot(link).catch(() => null), // Fail gracefully if puppeteer breaks
+      getPageSpeedInsights(link).catch(() => null) // Fail gracefully if PageSpeed fails
+    ]);
+
+    // 3. Initialize AI
     const genAI = new GoogleGenerativeAI(geminiKey);
+    // Use gemini-1.5-flash as it supports vision and structured output
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `
-      You are an expert growth marketing consultant with a specialty in "Cosmic Strategy." 
-      You blend high-performance marketing data with intuitive, high-level business alignment.
-      
-      Analyze the following website or social media profile and produce a structured growth audit.
-      
-      Website or profile: ${link}
-      Business type: ${businessType}
-      Goals: ${goals}
-      
-      Structure the report with these sections:
-      
-      1. Overview: The Current Energy. A quick summary of the digital presence.
-      2. Current Strengths: Working with the Flow. What is working well?
-      3. Growth Bottlenecks: Mercury Retrograde points. What exactly is limiting their growth or conversion?
-      4. Astro-Growth Insights: Specialized cosmic/intuitive advice for the brand's evolution (e.g. Venusian aesthetics, Mars-like execution).
-      5. Immediate Improvements: Strategic Alignment. 3-5 things they can fix today.
-      6. Strategic Opportunities: Expansion Windows. High-level growth paths.
-      
-      CRITICAL LEAD GEN INSTRUCTION:
-      At the end of the report, you MUST provide a "Call to Action" for each of the following three "Paths to Manifestation":
-      
-      - Path 1 (The Builder): If the user wants the "Growth Bottlenecks" fixed for them immediately by an expert (Done For You).
-      - Path 2 (The Vault): If the user wants the exact templates and pointers to fix these "Immediate Improvements" themselves (Done With You).
-      - Path 3 (The Oracle): If the user needs a deep-dive consulting session to explore the "Strategic Opportunities" further (Consulting).
-      
-      Use professional yet slightly "mystical" and authoritative language. Use Markdown for formatting. Ensure the tone makes the user feel that scaling is inevitable if they align with one of these paths.
-    `;
+    const prompt = getCosmicAuditPrompt(link, businessType, goals, scrapedContent, seoData);
 
-    const result = await model.generateContent(prompt);
+    const parts: any[] = [
+      { text: prompt }
+    ];
+
+    if (screenshotBase64) {
+      parts.push({
+        inlineData: {
+          data: screenshotBase64,
+          mimeType: "image/jpeg"
+        }
+      });
+    }
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
+
     const response = await result.response;
     const text = response.text();
+    
+    let parsedResult;
+    try {
+      parsedResult = JSON.parse(text);
+    } catch (e) {
+      console.error("Failed to parse Gemini JSON:", text);
+      throw new Error("AI returned malformed JSON");
+    }
 
-    return NextResponse.json({ audit: text });
+    // 4. Save to database for Persistent History
+    const auditId = crypto.randomUUID();
+    
+    try {
+      await saveAudit({
+        id: auditId,
+        userEmail: session?.user?.email || undefined,
+        link,
+        businessType,
+        goals,
+        markdownAudit: parsedResult.markdownAudit,
+        scores: JSON.stringify(parsedResult.scores || {})
+      });
+    } catch (dbError) {
+      console.error("Failed to save audit to DB:", dbError);
+      // We don't fail the request if DB fails, just log it
+    }
+
+    // Return the id, audit text, and scores to the client
+    return NextResponse.json({ 
+      id: auditId,
+      audit: parsedResult.markdownAudit, 
+      scores: parsedResult.scores 
+    });
   } catch (error: any) {
     console.error("Audit Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to generate audit" }, { status: 500 });
+    
+    // Map specific Gemini AI errors
+    const errorMessage = error.message || "";
+    if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment before trying again." }, { status: 429 });
+    }
+    if (errorMessage.includes("API key not valid") || errorMessage.includes("401")) {
+      return NextResponse.json({ error: "Invalid Gemini API Key. Please check your settings." }, { status: 401 });
+    }
+    if (errorMessage.includes("Safety")) {
+      return NextResponse.json({ error: "The request was blocked by AI safety filters. Please try rephrasing your goals." }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: "An unexpected cosmic interference occurred. Failed to generate audit." }, { status: 500 });
   }
 }

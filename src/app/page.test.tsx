@@ -36,7 +36,7 @@ describe('HomePage', () => {
     
     fireEvent.click(screen.getByRole('button', { name: /Generate Cosmic Audit/i }));
     
-    expect(screen.getByText('Please configure your API keys in Settings first.')).toBeInTheDocument();
+    expect(screen.getByText('Please configure your Gemini API key in Settings first.')).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
   });
 
@@ -54,9 +54,7 @@ describe('HomePage', () => {
     expect(JSON.parse(sessionStorage.getItem('current_audit_request')!)).toEqual({
       link: 'test.com',
       businessType: 'Studio',
-      goals: 'Grow',
-      geminiKey: 'test-key',
-      openaiKey: null
+      goals: 'Grow'
     });
   });
 });

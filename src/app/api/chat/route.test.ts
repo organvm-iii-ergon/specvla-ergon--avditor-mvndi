@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@ai-sdk/google", () => ({
-  google: vi.fn().mockReturnValue("mock-model"),
+vi.mock("@/services/aiModelFactory", () => ({
+  createAIModel: vi.fn().mockReturnValue("mock-model"),
 }));
 
 vi.mock("ai", () => ({
@@ -12,12 +12,16 @@ vi.mock("ai", () => ({
 
 import { POST } from "./route";
 import { streamText } from "ai";
-import { google } from "@ai-sdk/google";
+import { createAIModel } from "@/services/aiModelFactory";
 
-function makeRequest(body: Record<string, unknown>): Request {
+function makeRequest(body: Record<string, unknown>, headers?: Record<string, string>): Request {
   return new Request("http://localhost:3000/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer test-api-key", // allow-secret
+      ...headers,
+    },
     body: JSON.stringify(body),
   });
 }
@@ -39,7 +43,21 @@ describe("POST /api/chat", () => {
     const text = await res.text();
     expect(text).toBe("streamed text");
     expect(streamText).toHaveBeenCalledOnce();
-    expect(google).toHaveBeenCalledWith("gemini-1.5-flash");
+    expect(createAIModel).toHaveBeenCalledWith("gemini", "test-api-key"); // allow-secret
+  });
+
+  it("uses the X-AI-Provider header to select provider", async () => {
+    await POST(
+      makeRequest(
+        {
+          messages: [{ role: "user", content: "Hello" }],
+          auditContext: "Sample audit data",
+        },
+        { "X-AI-Provider": "openai" }
+      )
+    );
+
+    expect(createAIModel).toHaveBeenCalledWith("openai", "test-api-key"); // allow-secret
   });
 
   it("passes auditContext into system prompt", async () => {
@@ -56,6 +74,20 @@ describe("POST /api/chat", () => {
     expect(call.system).toContain(auditContext);
     expect(call.model).toBe("mock-model");
     expect(call.messages).toEqual([{ role: "user", content: "Explain my scores" }]);
+  });
+
+  it("returns 401 when Authorization header is missing", async () => {
+    const req = new Request("http://localhost:3000/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Hello" }],
+        auditContext: "data",
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
   });
 
   it("returns 500 on error", async () => {

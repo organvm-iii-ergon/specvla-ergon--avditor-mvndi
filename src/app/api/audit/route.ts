@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { scrapeWebsite } from "@/services/scraper";
 import { getCosmicAuditPrompt } from "@/services/promptTemplates";
@@ -8,6 +8,7 @@ import { saveAudit } from "@/lib/db";
 import crypto from "crypto";
 import { auth } from "@/auth";
 import { createRateLimiter, getClientIP } from "@/lib/rate-limit";
+import { createAIModel, type AIProviderType } from "@/services/aiModelFactory";
 
 const rateLimiter = createRateLimiter({ max: 5, windowMs: 60 * 60 * 1000 });
 
@@ -29,10 +30,13 @@ export async function POST(request: Request) {
     // 1. Extract API Key from Authorization header securely
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing or invalid Authorization header. Please configure your Gemini API Key in Settings." }, { status: 401 });
+      return NextResponse.json({ error: "Missing or invalid Authorization header. Please configure your API Key in Settings." }, { status: 401 });
     }
-    
-    const geminiKey = authHeader.split(" ")[1];
+
+    const apiKey = authHeader.split(" ")[1]; // allow-secret
+
+    // 2. Determine AI provider from header (defaults to gemini)
+    const provider = (request.headers.get("X-AI-Provider") || "gemini") as AIProviderType;
 
     const { link, businessType, goals } = await request.json();
 
@@ -42,54 +46,55 @@ export async function POST(request: Request) {
 
     const session = await auth();
 
-    // 2. Fetch context in parallel to save time
+    // 3. Fetch context in parallel to save time
     const [scrapedContent, screenshotBase64, seoData] = await Promise.all([
       scrapeWebsite(link),
       captureScreenshot(link).catch(() => null), // Fail gracefully if puppeteer breaks
       getPageSpeedInsights(link).catch(() => null) // Fail gracefully if PageSpeed fails
     ]);
 
-    // 3. Initialize AI
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    // Use gemini-1.5-flash as it supports vision and structured output
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    // 4. Build prompt and call AI via Vercel AI SDK (multi-provider)
+    const model = createAIModel(provider, apiKey); // allow-secret
     const prompt = getCosmicAuditPrompt(link, businessType, goals, scrapedContent, seoData);
 
-    const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [
-      { text: prompt }
+    type TextPart = { type: "text"; text: string };
+    type ImagePart = { type: "image"; image: string; mimeType: "image/jpeg" };
+    type ContentPart = TextPart | ImagePart;
+
+    const contentParts: ContentPart[] = [
+      { type: "text", text: prompt },
     ];
 
     if (screenshotBase64) {
-      parts.push({
-        inlineData: {
-          data: screenshotBase64,
-          mimeType: "image/jpeg"
-        }
+      contentParts.push({
+        type: "image",
+        image: screenshotBase64,
+        mimeType: "image/jpeg",
       });
     }
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
+    const { text } = await generateText({
+      model,
+      messages: [{
+        role: "user",
+        content: contentParts,
+      }],
     });
 
-    const response = await result.response;
-    const text = response.text();
-    
     let parsedResult;
     try {
-      parsedResult = JSON.parse(text);
+      // Extract JSON from the response — some providers wrap it in markdown code fences
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const jsonText = jsonMatch ? jsonMatch[1].trim() : text.trim();
+      parsedResult = JSON.parse(jsonText);
     } catch {
-      console.error("Failed to parse Gemini JSON:", text);
+      console.error("Failed to parse AI JSON:", text);
       throw new Error("AI returned malformed JSON");
     }
 
-    // 4. Save to database for Persistent History
+    // 5. Save to database for Persistent History
     const auditId = crypto.randomUUID();
-    
+
     try {
       await saveAudit({
         id: auditId,
@@ -106,21 +111,21 @@ export async function POST(request: Request) {
     }
 
     // Return the id, audit text, and scores to the client
-    return NextResponse.json({ 
+    return NextResponse.json({
       id: auditId,
-      audit: parsedResult.markdownAudit, 
-      scores: parsedResult.scores 
+      audit: parsedResult.markdownAudit,
+      scores: parsedResult.scores
     });
   } catch (error: unknown) {
     console.error("Audit Error:", error);
 
-    // Map specific Gemini AI errors
+    // Map specific AI provider errors
     const errorMessage = error instanceof Error ? error.message : "";
-    if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
+    if (errorMessage.includes("429") || errorMessage.includes("Quota") || errorMessage.includes("rate")) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment before trying again." }, { status: 429 });
     }
-    if (errorMessage.includes("API key not valid") || errorMessage.includes("401")) {
-      return NextResponse.json({ error: "Invalid Gemini API Key. Please check your settings." }, { status: 401 });
+    if (errorMessage.includes("API key not valid") || errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("invalid x-api-key")) {
+      return NextResponse.json({ error: "Invalid API Key. Please check your settings." }, { status: 401 });
     }
     if (errorMessage.includes("Safety")) {
       return NextResponse.json({ error: "The request was blocked by AI safety filters. Please try rephrasing your goals." }, { status: 400 });

@@ -54,6 +54,7 @@ export default async function RootLayout({
               <Link href="/" className="logo">{appName || "Growth Auditor.ai"}</Link>
               <div className="nav-links">
                 <Link href="/" className="nav-link">Audit</Link>
+                <Link href="/compare" className="nav-link">Compare</Link>
                 <Link href="/about" className="nav-link">Methodology</Link>
                 <Link href="/examples" className="nav-link">Examples</Link>
                 <Link href="/history" className="nav-link">History</Link>

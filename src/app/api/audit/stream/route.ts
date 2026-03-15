@@ -1,4 +1,3 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
 import { scrapeWebsite } from "@/services/scraper";
 import { getStreamingAuditPrompt } from "@/services/promptTemplates";
@@ -8,6 +7,7 @@ import { saveAudit } from "@/lib/db";
 import crypto from "crypto";
 import { auth } from "@/auth";
 import { createRateLimiter, getClientIP } from "@/lib/rate-limit";
+import { createAIModel, type AIProviderType } from "@/services/aiModelFactory";
 
 const rateLimiter = createRateLimiter({ max: 5, windowMs: 60 * 60 * 1000 });
 
@@ -30,12 +30,15 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "Missing or invalid Authorization header. Please configure your Gemini API Key in Settings." }),
+        JSON.stringify({ error: "Missing or invalid Authorization header. Please configure your API Key in Settings." }),
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const geminiKey = authHeader.split(" ")[1];
+    const apiKey = authHeader.split(" ")[1]; // allow-secret
+
+    // 2. Determine AI provider from header (defaults to gemini)
+    const provider = (request.headers.get("X-AI-Provider") || "gemini") as AIProviderType;
 
     const { link, businessType, goals } = await request.json();
 
@@ -48,7 +51,7 @@ export async function POST(request: Request) {
 
     const session = await auth();
 
-    // 2. Fetch context in parallel
+    // 3. Fetch context in parallel
     const [scrapedContent, screenshotBase64, seoData] = await Promise.all([
       scrapeWebsite(link),
       captureScreenshot(link).catch(() => null),
@@ -57,12 +60,14 @@ export async function POST(request: Request) {
 
     void screenshotBase64; // Vision not used with streamText (text-only prompt)
 
-    // 3. Build prompt for streaming markdown output
+    // 4. Build prompt for streaming markdown output
     const prompt = getStreamingAuditPrompt(link, businessType, goals, scrapedContent, seoData);
 
-    // 4. Stream the audit using Vercel AI SDK
+    // 5. Stream the audit using Vercel AI SDK (multi-provider)
+    const model = createAIModel(provider, apiKey); // allow-secret
+
     const result = streamText({
-      model: createGoogleGenerativeAI({ apiKey: geminiKey })("gemini-1.5-flash"), // allow-secret
+      model,
       prompt,
       onFinish: async ({ text }) => {
         // Save audit to DB in background after stream completes
@@ -90,15 +95,15 @@ export async function POST(request: Request) {
     console.error("Streaming Audit Error:", error);
 
     const errorMessage = error instanceof Error ? error.message : "";
-    if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
+    if (errorMessage.includes("429") || errorMessage.includes("Quota") || errorMessage.includes("rate")) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please wait a moment before trying again." }),
         { status: 429, headers: { "Content-Type": "application/json" } }
       );
     }
-    if (errorMessage.includes("API key not valid") || errorMessage.includes("401")) {
+    if (errorMessage.includes("API key not valid") || errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("invalid x-api-key")) {
       return new Response(
-        JSON.stringify({ error: "Invalid Gemini API Key. Please check your settings." }),
+        JSON.stringify({ error: "Invalid API Key. Please check your settings." }),
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }

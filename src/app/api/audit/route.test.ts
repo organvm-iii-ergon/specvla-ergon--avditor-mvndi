@@ -1,32 +1,26 @@
-import { POST } from './route';
 import { describe, it, expect, vi } from 'vitest';
 
-const mockGenerateContent = vi.fn().mockResolvedValue({
-  response: {
-    text: () => JSON.stringify({ markdownAudit: 'Mocked audit response', scores: { communication: 90, aesthetic: 80, drive: 70, structure: 85 } }),
-  },
+const mockGenerateText = vi.fn().mockResolvedValue({
+  text: JSON.stringify({
+    markdownAudit: 'Mocked audit response',
+    scores: { communication: 90, aesthetic: 80, drive: 70, structure: 85 },
+  }),
 });
 
-vi.mock('@google/generative-ai', () => {
-  return {
-    GoogleGenerativeAI: class {
-      getGenerativeModel() {
-        return {
-          generateContent: mockGenerateContent,
-        };
-      }
-    }
-  };
-});
+vi.mock('ai', () => ({
+  generateText: (...args: unknown[]) => mockGenerateText(...args),
+}));
 
-vi.mock('@/services/scraper', () => {
-  return {
-    scrapeWebsite: vi.fn().mockResolvedValue("Mocked scraped content")
-  };
-});
+vi.mock('@/services/aiModelFactory', () => ({
+  createAIModel: vi.fn().mockReturnValue('mock-model'),
+}));
+
+vi.mock('@/services/scraper', () => ({
+  scrapeWebsite: vi.fn().mockResolvedValue("Mocked scraped content"),
+}));
 
 vi.mock('@/services/vision', () => ({
-  captureScreenshot: vi.fn().mockResolvedValue('base64mockscreenshot')
+  captureScreenshot: vi.fn().mockResolvedValue('base64mockscreenshot'),
 }));
 
 vi.mock('@/services/pagespeed', () => ({
@@ -35,19 +29,20 @@ vi.mock('@/services/pagespeed', () => ({
     seoScore: 90,
     accessibilityScore: 78,
     bestPracticesScore: 88,
-    lcp: '2.4s'
-  })
+    lcp: '2.4s',
+  }),
 }));
 
 vi.mock('@/lib/db', () => ({
-  saveAudit: vi.fn().mockResolvedValue(undefined)
+  saveAudit: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/auth', () => {
-  return {
-    auth: vi.fn().mockResolvedValue({ user: { email: 'test@example.com', name: 'Test User' } })
-  };
-});
+vi.mock('@/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { email: 'test@example.com', name: 'Test User' } }),
+}));
+
+import { POST } from './route';
+import { createAIModel } from '@/services/aiModelFactory';
 
 describe('API Route /api/audit', () => {
   it('returns 401 if Authorization header is missing', async () => {
@@ -56,7 +51,7 @@ describe('API Route /api/audit', () => {
       body: JSON.stringify({
         link: 'test.com',
         businessType: 'test',
-        goals: 'test'
+        goals: 'test',
       }),
     });
 
@@ -70,10 +65,10 @@ describe('API Route /api/audit', () => {
     const request = new Request('http://localhost/api/audit', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer valid-key'
+        'Authorization': 'Bearer valid-key', // allow-secret
       },
       body: JSON.stringify({
-        link: 'test.com'
+        link: 'test.com',
         // Missing businessType and goals
       }),
     });
@@ -88,14 +83,14 @@ describe('API Route /api/audit', () => {
     const makeRequest = () => new Request('http://localhost/api/audit', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer valid-key',
+        'Authorization': 'Bearer valid-key', // allow-secret
         'Content-Type': 'application/json',
-        'x-forwarded-for': '192.168.1.100'
+        'x-forwarded-for': '192.168.1.100',
       },
       body: JSON.stringify({
         link: 'test.com',
         businessType: 'test',
-        goals: 'test'
+        goals: 'test',
       }),
     });
 
@@ -116,13 +111,13 @@ describe('API Route /api/audit', () => {
     const request = new Request('http://localhost/api/audit', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer valid-key',
-        'Content-Type': 'application/json'
+        'Authorization': 'Bearer valid-key', // allow-secret
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         link: 'test.com',
         businessType: 'test',
-        goals: 'test'
+        goals: 'test',
       }),
     });
 
@@ -130,8 +125,31 @@ describe('API Route /api/audit', () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.audit).toBe('Mocked audit response');
-    
-    // Ensure the Gemini mock was called
-    expect(mockGenerateContent).toHaveBeenCalled();
+
+    // Verify the AI model factory was called with default provider
+    expect(createAIModel).toHaveBeenCalledWith('gemini', 'valid-key'); // allow-secret
+    expect(mockGenerateText).toHaveBeenCalled();
+  });
+
+  it('passes X-AI-Provider header to createAIModel', async () => {
+    vi.mocked(createAIModel).mockClear();
+
+    const request = new Request('http://localhost/api/audit', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer test-openai-key', // allow-secret
+        'Content-Type': 'application/json',
+        'X-AI-Provider': 'openai',
+      },
+      body: JSON.stringify({
+        link: 'test.com',
+        businessType: 'test',
+        goals: 'test',
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(createAIModel).toHaveBeenCalledWith('openai', 'test-openai-key'); // allow-secret
   });
 });

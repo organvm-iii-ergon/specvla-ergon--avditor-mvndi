@@ -1,7 +1,9 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef, useState } from "react";
+import { DefaultChatTransport } from "ai";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { getStoredApiKey, getStoredProvider } from "@/services/aiProvider";
 
 interface ChatBoxProps {
   auditContext: string;
@@ -9,7 +11,20 @@ interface ChatBoxProps {
 
 export default function ChatBox({ auditContext }: ChatBoxProps) {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, error } = useChat();
+
+  const transport = useMemo(() => {
+    const apiKey = getStoredApiKey() || ""; // allow-secret
+    const provider = getStoredProvider();
+    return new DefaultChatTransport({
+      api: "/api/chat",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`, // allow-secret
+        "X-AI-Provider": provider,
+      },
+    });
+  }, []);
+
+  const { messages, sendMessage, status, error } = useChat({ transport });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

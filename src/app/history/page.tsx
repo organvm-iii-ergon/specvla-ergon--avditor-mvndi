@@ -17,8 +17,8 @@ export default function HistoryPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         setAudits(data.audits || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load history.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load history.");
       } finally {
         setLoading(false);
       }

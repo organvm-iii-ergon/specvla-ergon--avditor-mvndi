@@ -46,24 +46,23 @@ export default function AdminPage() {
   const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const res = await fetch("/api/admin?type=stats");
+        if (res.ok) {
+          setIsAdmin(true);
+          loadOverview();
+        } else {
+          setError("Admin access required");
+        }
+      } catch {
+        setError("Failed to check admin status");
+      } finally {
+        setLoading(false);
+      }
+    };
     checkAdmin();
   }, []);
-
-  const checkAdmin = async () => {
-    try {
-      const res = await fetch("/api/admin?type=stats");
-      if (res.ok) {
-        setIsAdmin(true);
-        loadOverview();
-      } else {
-        setError("Admin access required");
-      }
-    } catch {
-      setError("Failed to check admin status");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadOverview = async () => {
     try {

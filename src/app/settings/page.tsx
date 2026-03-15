@@ -9,6 +9,7 @@ export default function SettingsPage() {
   useEffect(() => {
     // Load key from localStorage on mount
     const storedGemini = localStorage.getItem("gemini_api_key") || "";
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage unavailable during SSR, must set in effect
     setGeminiKey(storedGemini);
   }, []);
 

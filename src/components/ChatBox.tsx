@@ -3,20 +3,13 @@
 import { useChat } from "@ai-sdk/react";
 import { useEffect, useRef, useState } from "react";
 
-interface ChatMessage {
-  id: string;
-  role: string;
-  content: unknown;
-}
-
 interface ChatBoxProps {
   auditContext: string;
 }
 
 export default function ChatBox({ auditContext }: ChatBoxProps) {
   const [input, setInput] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { messages, sendMessage, status, error } = useChat() as any;
+  const { messages, sendMessage, status, error } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -27,17 +20,10 @@ export default function ChatBox({ auditContext }: ChatBoxProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || status === "streaming") return;
-    
-    await sendMessage(input);
-    setInput("");
-  };
 
-  const getContent = (msg: ChatMessage) => {
-    if (typeof msg.content === "string") return msg.content;
-    if (Array.isArray(msg.content)) {
-      return msg.content.map((c: { text?: string }) => c.text || "").join("");
-    }
-    return JSON.stringify(msg.content);
+    const text = input;
+    setInput("");
+    await sendMessage({ text }, { body: { auditContext } });
   };
 
   return (
@@ -53,12 +39,12 @@ export default function ChatBox({ auditContext }: ChatBoxProps) {
             The Oracle is listening...
           </div>
         )}
-        {messages.map((m: ChatMessage) => (
+        {messages.map((m) => (
           <div key={m.id} className={`message ${m.role === "user" ? "user-msg" : "ai-msg"}`}>
             <span style={{ fontWeight: "bold", color: m.role === "user" ? "#fff" : "var(--accent)", display: "block", marginBottom: "0.25rem", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>
               {m.role === "user" ? "You" : "Oracle"}
             </span>
-            {getContent(m)}
+            {m.parts.filter(p => p.type === "text").map(p => p.text).join("")}
           </div>
         ))}
         {status === "streaming" && (

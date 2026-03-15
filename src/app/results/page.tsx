@@ -10,7 +10,7 @@ import ChatBox from "@/components/ChatBox";
 
 export default function ResultsPage() {
   const [audit, setAudit] = useState("");
-  const [scores, setScores] = useState<any>(null);
+  const [scores, setScores] = useState<{ communication: number; aesthetic: number; drive: number; structure: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -22,7 +22,7 @@ export default function ResultsPage() {
     
     try {
       const html2pdf = (await import("html2pdf.js")).default;
-      const opt: any = {
+      const opt: Record<string, unknown> = {
         margin: 1,
         filename: 'Cosmic_Growth_Audit.pdf',
         image: { type: 'jpeg', quality: 0.98 },
@@ -88,8 +88,8 @@ export default function ResultsPage() {
         // Cache the successful result
         sessionStorage.setItem("current_audit_result", result.audit);
         sessionStorage.setItem("current_audit_scores", JSON.stringify(result.scores));
-      } catch (err: any) {
-        setError(err.message || "Failed to generate audit. Please check your API keys.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to generate audit. Please check your API keys.");
       } finally {
         setLoading(false);
       }

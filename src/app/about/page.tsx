@@ -14,7 +14,7 @@ export default function AboutPage() {
         <div className="card">
           <h2 style={{ color: "var(--secondary)", marginBottom: "1rem" }}>The Four Pillars of Alignment</h2>
           <p style={{ color: "var(--text-muted)", marginBottom: "2rem", lineHeight: "1.7" }}>
-            Traditional marketing tools give you cold data. We translate that data into intuitive, actionable "energies" so you can manifest growth naturally.
+            Traditional marketing tools give you cold data. We translate that data into intuitive, actionable &ldquo;energies&rdquo; so you can manifest growth naturally.
           </p>
 
           <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "2rem" }}>
@@ -39,7 +39,7 @@ export default function AboutPage() {
             <li>
               <h3 style={{ color: "#fff", marginBottom: "0.5rem" }}>Saturn (Structure)</h3>
               <p style={{ color: "var(--text-muted)", lineHeight: "1.6" }}>
-                Is your technical foundation solid? We pull live Google PageSpeed Insights, Core Web Vitals, and accessibility scores to ensure you aren't leaking traffic.
+                Is your technical foundation solid? We pull live Google PageSpeed Insights, Core Web Vitals, and accessibility scores to ensure you aren&apos;t leaking traffic.
               </p>
             </li>
           </ul>

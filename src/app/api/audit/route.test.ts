@@ -25,6 +25,24 @@ vi.mock('@/services/scraper', () => {
   };
 });
 
+vi.mock('@/services/vision', () => ({
+  captureScreenshot: vi.fn().mockResolvedValue('base64mockscreenshot')
+}));
+
+vi.mock('@/services/pagespeed', () => ({
+  getPageSpeedInsights: vi.fn().mockResolvedValue({
+    performanceScore: 85,
+    seoScore: 90,
+    accessibilityScore: 78,
+    bestPracticesScore: 88,
+    lcp: '2.4s'
+  })
+}));
+
+vi.mock('@/lib/db', () => ({
+  saveAudit: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('@/auth', () => {
   return {
     auth: vi.fn().mockResolvedValue({ user: { email: 'test@example.com', name: 'Test User' } })
@@ -64,6 +82,34 @@ describe('API Route /api/audit', () => {
     expect(response.status).toBe(400);
     const data = await response.json();
     expect(data.error).toContain('Missing required fields');
+  });
+
+  it('returns 429 after 5 requests from the same IP', async () => {
+    const makeRequest = () => new Request('http://localhost/api/audit', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer valid-key',
+        'Content-Type': 'application/json',
+        'x-forwarded-for': '192.168.1.100'
+      },
+      body: JSON.stringify({
+        link: 'test.com',
+        businessType: 'test',
+        goals: 'test'
+      }),
+    });
+
+    // Make 5 requests (all should succeed)
+    for (let i = 0; i < 5; i++) {
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+    }
+
+    // 6th request should be rate limited
+    const response = await POST(makeRequest());
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error).toContain('Rate limit exceeded');
   });
 
   it('returns an audit if valid request is made with Authorization header', async () => {

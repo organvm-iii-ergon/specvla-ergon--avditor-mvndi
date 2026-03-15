@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     const prompt = getCosmicAuditPrompt(link, businessType, goals, scrapedContent, seoData);
 
-    const parts: any[] = [
+    const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [
       { text: prompt }
     ];
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     let parsedResult;
     try {
       parsedResult = JSON.parse(text);
-    } catch (e) {
+    } catch {
       console.error("Failed to parse Gemini JSON:", text);
       throw new Error("AI returned malformed JSON");
     }
@@ -111,11 +111,11 @@ export async function POST(request: Request) {
       audit: parsedResult.markdownAudit, 
       scores: parsedResult.scores 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Audit Error:", error);
-    
+
     // Map specific Gemini AI errors
-    const errorMessage = error.message || "";
+    const errorMessage = error instanceof Error ? error.message : "";
     if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment before trying again." }, { status: 429 });
     }

@@ -37,6 +37,7 @@ export default function HomePage() {
   const [planetaryWindow, setPlanetaryWindow] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe: getMoonPhase uses Date.now(), must run client-side only
     setPlanetaryWindow(getMoonPhase());
   }, []);
 

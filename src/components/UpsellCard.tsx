@@ -13,8 +13,6 @@ interface UpsellCardProps {
 export default function UpsellCard({ pathNumber, title, description, buttonText, isPrimary }: UpsellCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleCTA = () => {
@@ -101,22 +99,16 @@ export default function UpsellCard({ pathNumber, title, description, buttonText,
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             
-            {submitted ? (
-              <div className="success-state">
-                <h3>Alignment Confirmed ✦</h3>
-                <p>Check your email for the next steps to manifest your growth.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit}>
                 <h3>{title}</h3>
                 <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
                   Enter your email to proceed with this manifestation path.
                 </p>
                 <div className="form-group">
-                  <input 
-                    type="email" 
-                    className="input" 
-                    placeholder="your@email.com" 
+                  <input
+                    type="email"
+                    className="input"
+                    placeholder="your@email.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -126,7 +118,6 @@ export default function UpsellCard({ pathNumber, title, description, buttonText,
                   {isRedirecting ? "Aligning..." : "Continue to Checkout"}
                 </button>
               </form>
-            )}
           </div>
         </div>
       )}

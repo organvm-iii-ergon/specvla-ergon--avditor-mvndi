@@ -23,13 +23,20 @@ interface Audit {
   createdAt?: string;
 }
 
+interface Lead {
+  email: string;
+  source: string;
+  auditId?: string;
+  createdAt?: string;
+}
+
 interface Stats {
   totalAudits: number;
   totalUsers: number;
   auditsLast30Days: number;
 }
 
-type Tab = "overview" | "users" | "audits" | "config";
+type Tab = "overview" | "users" | "audits" | "leads" | "config";
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
@@ -40,6 +47,7 @@ export default function AdminPage() {
   const [config, setConfig] = useState<Config>({});
   const [users, setUsers] = useState<User[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   
   const [saving, setSaving] = useState(false);
@@ -105,6 +113,18 @@ export default function AdminPage() {
     }
   };
 
+  const loadLeads = async () => {
+    try {
+      const res = await fetch("/api/admin?type=leads");
+      if (res.ok) {
+        const data = await res.json();
+        setLeads(data.leads || []);
+      }
+    } catch (e) {
+      console.error("Failed to load leads:", e);
+    }
+  };
+
   const loadAudits = async () => {
     try {
       const res = await fetch("/api/admin/users");
@@ -122,6 +142,7 @@ export default function AdminPage() {
     if (tab === "config") await loadConfig();
     if (tab === "users") await loadUsers();
     if (tab === "audits") await loadAudits();
+    if (tab === "leads") await loadLeads();
   };
 
   const saveConfig = async (key: string, value: string) => {
@@ -218,7 +239,7 @@ export default function AdminPage() {
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-          {(["overview", "users", "audits", "config"] as Tab[]).map((tab) => (
+          {(["overview", "users", "audits", "leads", "config"] as Tab[]).map((tab) => (
             <button
               key={tab}
               className={`btn ${activeTab === tab ? "" : "btn-secondary"}`}
@@ -341,6 +362,40 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "leads" && (
+          <div className="card">
+            <h2 style={{ color: "var(--secondary)", marginBottom: "1rem" }}>All Leads ({leads.length})</h2>
+            <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+              {leads.length === 0 ? (
+                <p style={{ color: "var(--text-muted)" }}>No leads yet</p>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                      <th style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)" }}>Email</th>
+                      <th style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)" }}>Source</th>
+                      <th style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)" }}>Audit ID</th>
+                      <th style={{ textAlign: "right", padding: "0.5rem", color: "var(--text-muted)" }}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((lead, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "0.5rem" }}>{lead.email}</td>
+                        <td style={{ padding: "0.5rem", color: "var(--text-muted)" }}>{lead.source}</td>
+                        <td style={{ padding: "0.5rem", color: "var(--text-muted)" }}>{lead.auditId || "-"}</td>
+                        <td style={{ textAlign: "right", padding: "0.5rem", color: "var(--text-muted)" }}>
+                          {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

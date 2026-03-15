@@ -6,6 +6,7 @@ vi.mock("@/auth", () => ({
 
 vi.mock("@/lib/db", () => ({
   getAudits: vi.fn(),
+  getLeads: vi.fn(),
 }));
 
 import { GET } from "./route";
@@ -121,6 +122,34 @@ describe("GET /api/admin", () => {
     expect(data.uniqueUsers[0].email).toBe("user1@test.com");
     expect(data.uniqueUsers[0].auditCount).toBe(1);
     expect(data.recentAudits).toHaveLength(1);
+  });
+
+  it("returns leads for type=leads", async () => {
+    const { auth } = await import("@/auth");
+    vi.mocked(auth).mockResolvedValue({
+      user: { email: "admin@growthauditor.ai", name: "Admin" },
+      expires: "",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const { getLeads } = await import("@/lib/db");
+    vi.mocked(getLeads).mockResolvedValue([
+      {
+        id: "lead-1",
+        email: "lead@test.com",
+        auditId: "audit-1",
+        source: "audit_gate",
+        createdAt: "2026-03-01T00:00:00Z",
+      },
+    ]);
+
+    const res = await GET(makeRequest("leads"));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.leads).toHaveLength(1);
+    expect(data.leads[0].email).toBe("lead@test.com");
+    expect(data.leads[0].source).toBe("audit_gate");
   });
 
   it("returns 400 for invalid type", async () => {

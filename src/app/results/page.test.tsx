@@ -75,6 +75,13 @@ describe("ResultsPage", () => {
 
     localStorage.setItem("gemini_api_key", "test-key");
 
+    // First call: streaming endpoint fails (triggers fallback)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      body: null,
+    });
+    // Second call: fallback JSON endpoint also fails
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global.fetch as any).mockResolvedValueOnce({
       ok: false,

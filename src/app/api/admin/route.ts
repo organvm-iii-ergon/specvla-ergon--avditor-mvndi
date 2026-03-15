@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getAudits } from "@/lib/db";
+import { getAudits, getLeads } from "@/lib/db";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -46,6 +46,11 @@ export async function GET(req: Request) {
         uniqueUsers: Array.from(uniqueUsers.values()),
         recentAudits: audits.slice(0, 20),
       });
+    }
+
+    if (type === "leads") {
+      const leads = await getLeads();
+      return NextResponse.json({ leads });
     }
 
     if (type === "stats") {

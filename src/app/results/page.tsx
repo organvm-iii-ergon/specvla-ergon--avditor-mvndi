@@ -9,6 +9,24 @@ import CosmicChart from "@/components/CosmicChart";
 import ChatBox from "@/components/ChatBox";
 import EmailGate from "@/components/EmailGate";
 
+function parseScoresFromText(text: string): { communication: number; aesthetic: number; drive: number; structure: number } | null {
+  const scoresMatch = text.match(/## Scores[\s\S]*$/);
+  if (!scoresMatch) return null;
+  const scores: Record<string, number> = {};
+  const lines = scoresMatch[0].split("\n");
+  for (const line of lines) {
+    const match = line.match(/(\w+):\s*(\d+)/);
+    if (match) {
+      const key = match[1].toLowerCase();
+      scores[key] = parseInt(match[2], 10);
+    }
+  }
+  if (scores.communication !== undefined && scores.aesthetic !== undefined && scores.drive !== undefined && scores.structure !== undefined) {
+    return scores as { communication: number; aesthetic: number; drive: number; structure: number };
+  }
+  return null;
+}
+
 export default function ResultsPage() {
   const [audit, setAudit] = useState("");
   const [scores, setScores] = useState<{ communication: number; aesthetic: number; drive: number; structure: number } | null>(null);
@@ -68,29 +86,82 @@ export default function ResultsPage() {
       }
 
       const parsedData = JSON.parse(data);
+      const requestHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${geminiKey}`,
+      };
+      const requestBody = JSON.stringify(parsedData);
 
       try {
-        const response = await fetch("/api/audit", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${geminiKey}`
-          },
-          body: JSON.stringify(parsedData),
-        });
+        // Try streaming endpoint first
+        let streamSuccess = false;
+        try {
+          const streamResponse = await fetch("/api/audit/stream", {
+            method: "POST",
+            headers: requestHeaders,
+            body: requestBody,
+          });
 
-        const result = await response.json();
-        
-        if (!response.ok || result.error) {
-          throw new Error(result.error || `HTTP error! status: ${response.status}`);
+          if (!streamResponse.ok) {
+            const errorData = await streamResponse.json().catch(() => null);
+            throw new Error(errorData?.error || `HTTP error! status: ${streamResponse.status}`);
+          }
+
+          if (!streamResponse.body) {
+            throw new Error("No response body for streaming");
+          }
+
+          const reader = streamResponse.body.getReader();
+          const decoder = new TextDecoder();
+          let fullText = "";
+
+          setLoading(false);
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            fullText += chunk;
+            setAudit(fullText);
+          }
+
+          // Parse scores from the streamed text
+          const parsedScores = parseScoresFromText(fullText);
+          if (parsedScores) {
+            setScores(parsedScores);
+            sessionStorage.setItem("current_audit_scores", JSON.stringify(parsedScores));
+          }
+
+          sessionStorage.setItem("current_audit_result", fullText);
+          streamSuccess = true;
+        } catch (streamErr) {
+          console.warn("Streaming failed, falling back to standard endpoint:", streamErr);
+          // If streaming already showed partial content, treat the stream error as fatal
+          if (!loading) {
+            throw streamErr;
+          }
         }
 
-        setAudit(result.audit);
-        setScores(result.scores);
-        if (result.id) setAuditId(result.id);
-        // Cache the successful result
-        sessionStorage.setItem("current_audit_result", result.audit);
-        sessionStorage.setItem("current_audit_scores", JSON.stringify(result.scores));
+        // Fallback to standard JSON endpoint if streaming failed before any content was shown
+        if (!streamSuccess) {
+          const response = await fetch("/api/audit", {
+            method: "POST",
+            headers: requestHeaders,
+            body: requestBody,
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || result.error) {
+            throw new Error(result.error || `HTTP error! status: ${response.status}`);
+          }
+
+          setAudit(result.audit);
+          setScores(result.scores);
+          if (result.id) setAuditId(result.id);
+          sessionStorage.setItem("current_audit_result", result.audit);
+          sessionStorage.setItem("current_audit_scores", JSON.stringify(result.scores));
+        }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to generate audit. Please check your API keys.");
       } finally {
@@ -99,6 +170,7 @@ export default function ResultsPage() {
     };
 
     runAudit();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {

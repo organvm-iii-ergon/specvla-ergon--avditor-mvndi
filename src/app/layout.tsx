@@ -5,8 +5,24 @@ import { auth, signIn, signOut } from "@/auth";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 
 export const metadata: Metadata = {
-  title: "Growth Auditor AI | Cosmic Strategy & Digital Alignment",
+  title: {
+    default: "Growth Auditor AI | Cosmic Strategy & Digital Alignment",
+    template: "%s | Growth Auditor AI",
+  },
   description: "Decode your digital bottlenecks and align your business strategy with data-driven, cosmic growth audits powered by AI.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://growth-auditor.vercel.app"),
+  openGraph: {
+    title: "Growth Auditor AI",
+    description: "AI-powered cosmic growth audits for your digital presence.",
+    siteName: "Growth Auditor AI",
+    type: "website",
+    images: ["/api/og"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Growth Auditor AI",
+    description: "AI-powered cosmic growth audits for your digital presence.",
+  },
 };
 
 export default async function RootLayout({

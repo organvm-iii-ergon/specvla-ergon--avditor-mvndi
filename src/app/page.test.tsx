@@ -21,7 +21,7 @@ describe('HomePage', () => {
 
   it('renders correctly', () => {
     render(<HomePage />);
-    expect(screen.getByText('Growth Auditor AI')).toBeInTheDocument();
+    expect(screen.getByText('Decode Your Digital Bottlenecks in 60 Seconds')).toBeInTheDocument();
     expect(screen.getByLabelText(/URL \/ Social Handle/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Domain \/ Niche/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Target Manifestation/i)).toBeInTheDocument();

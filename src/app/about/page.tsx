@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Methodology",
+  description: "The Four Pillars of Cosmic Alignment: Mercury, Venus, Mars, and Saturn. How Growth Auditor AI decodes digital bottlenecks.",
+};
+
 export default function AboutPage() {
   return (
     <main className="main">

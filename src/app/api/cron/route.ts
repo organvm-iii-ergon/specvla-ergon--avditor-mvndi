@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAudits, saveAudit } from "@/lib/db";
+import { getAudits, saveAudit, getScheduledAudits, updateScheduledAudit } from "@/lib/db";
 import { scrapeWebsite } from "@/services/scraper";
 import { getCosmicAuditPrompt } from "@/services/promptTemplates";
 import { captureScreenshot } from "@/services/vision";
@@ -88,6 +88,17 @@ async function generateMonthlyAudit(
   }
 }
 
+function isDue(frequency: "weekly" | "monthly", lastRunAt?: string): boolean {
+  if (!lastRunAt) return true;
+
+  const last = new Date(lastRunAt).getTime();
+  const now = Date.now();
+  const daysSinceLast = (now - last) / (1000 * 60 * 60 * 24);
+
+  if (frequency === "weekly") return daysSinceLast >= 7;
+  return daysSinceLast >= 30;
+}
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -97,6 +108,38 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    let processed = 0;
+
+    // Primary path: use scheduled_audits table
+    const schedules = await getScheduledAudits();
+    const enabledSchedules = schedules.filter((s) => s.enabled);
+
+    if (enabledSchedules.length > 0) {
+      for (const schedule of enabledSchedules) {
+        if (!isDue(schedule.frequency, schedule.lastRunAt)) {
+          continue;
+        }
+
+        try {
+          await generateMonthlyAudit(
+            schedule.link,
+            schedule.businessType,
+            schedule.goals,
+            schedule.userEmail
+          );
+          await updateScheduledAudit(schedule.id, {
+            lastRunAt: new Date().toISOString(),
+          });
+          processed++;
+        } catch (e) {
+          console.error(`Failed to process scheduled audit ${schedule.id} for ${schedule.userEmail}:`, e);
+        }
+      }
+
+      return NextResponse.json({ success: true, processedSchedules: processed });
+    }
+
+    // Fallback: re-audit all users' most recent audit (legacy behavior)
     const allAudits = await getAudits();
     const uniqueUserAudits = new Map<string, (typeof allAudits)[0]>();
 
@@ -106,7 +149,6 @@ export async function GET(req: Request) {
       }
     }
 
-    let processed = 0;
     for (const [, audit] of uniqueUserAudits) {
       try {
         await generateMonthlyAudit(
@@ -121,7 +163,7 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, processedUsers: processed });
+    return NextResponse.json({ success: true, processedUsers: processed, fallback: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Cron Error:", message);

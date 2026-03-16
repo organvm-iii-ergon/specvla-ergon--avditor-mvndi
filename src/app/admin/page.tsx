@@ -30,27 +30,55 @@ interface Lead {
   createdAt?: string;
 }
 
+interface ScheduledAudit {
+  id: string;
+  userEmail: string;
+  link: string;
+  businessType: string;
+  goals: string;
+  frequency: "weekly" | "monthly";
+  enabled: boolean;
+  lastRunAt?: string;
+  createdAt?: string;
+}
+
 interface Stats {
   totalAudits: number;
   totalUsers: number;
   auditsLast30Days: number;
 }
 
-type Tab = "overview" | "users" | "audits" | "leads" | "config";
+type Tab = "overview" | "users" | "audits" | "leads" | "schedules" | "analytics" | "config";
+
+interface AnalyticsData {
+  auditsByDay: Array<{ date: string; count: number }>;
+  topDomains: Array<{ domain: string; count: number }>;
+  avgScores: { communication: number; aesthetic: number; drive: number; structure: number };
+  businessTypes: Array<{ type: string; count: number }>;
+  leadsByDay: Array<{ date: string; count: number }>;
+  totalLeads: number;
+  conversionRate: number;
+}
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  
+
   const [config, setConfig] = useState<Config>({});
   const [users, setUsers] = useState<User[]>([]);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  
+
   const [envStatus, setEnvStatus] = useState<Array<{ key: string; label: string; configured: boolean; category: string }>>([]);
+
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+
+  const [schedules, setSchedules] = useState<ScheduledAudit[]>([]);
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [newSchedule, setNewSchedule] = useState({ userEmail: "", link: "", businessType: "", goals: "", frequency: "monthly" as "weekly" | "monthly" });
 
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -141,6 +169,17 @@ export default function AdminPage() {
     }
   };
 
+  const loadAnalytics = async () => {
+    try {
+      const res = await fetch("/api/admin/analytics");
+      if (res.ok) {
+        setAnalytics(await res.json());
+      }
+    } catch (e) {
+      console.error("Failed to load analytics:", e);
+    }
+  };
+
   const loadAudits = async () => {
     try {
       const res = await fetch("/api/admin/users");
@@ -153,12 +192,71 @@ export default function AdminPage() {
     }
   };
 
+  const loadSchedules = async () => {
+    try {
+      const res = await fetch("/api/admin/schedules");
+      if (res.ok) {
+        const data = await res.json();
+        setSchedules(data.schedules || []);
+      }
+    } catch (e) {
+      console.error("Failed to load schedules:", e);
+    }
+  };
+
+  const addSchedule = async () => {
+    if (!newSchedule.userEmail || !newSchedule.link || !newSchedule.businessType || !newSchedule.goals) return;
+    try {
+      const res = await fetch("/api/admin/schedules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSchedule),
+      });
+      if (res.ok) {
+        setNewSchedule({ userEmail: "", link: "", businessType: "", goals: "", frequency: "monthly" });
+        setShowAddSchedule(false);
+        await loadSchedules();
+      }
+    } catch (e) {
+      console.error("Failed to add schedule:", e);
+    }
+  };
+
+  const deleteSchedule = async (id: string) => {
+    if (!confirm("Delete this scheduled audit?")) return;
+    try {
+      const res = await fetch(`/api/admin/schedules?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setSchedules(schedules.filter((s) => s.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete schedule:", e);
+    }
+  };
+
+  const toggleSchedule = async (id: string, enabled: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/schedules?id=${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      if (res.ok) {
+        setSchedules(schedules.map((s) => s.id === id ? { ...s, enabled } : s));
+      }
+    } catch (e) {
+      console.error("Failed to toggle schedule:", e);
+    }
+  };
+
   const handleTabChange = async (tab: Tab) => {
     setActiveTab(tab);
     if (tab === "config") await loadConfig();
     if (tab === "users") await loadUsers();
     if (tab === "audits") await loadAudits();
     if (tab === "leads") await loadLeads();
+    if (tab === "schedules") await loadSchedules();
+    if (tab === "analytics") await loadAnalytics();
   };
 
   const saveConfig = async (key: string, value: string) => {
@@ -257,7 +355,7 @@ export default function AdminPage() {
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
-          {(["overview", "users", "audits", "leads", "config"] as Tab[]).map((tab) => (
+          {(["overview", "users", "audits", "leads", "schedules", "analytics", "config"] as Tab[]).map((tab) => (
             <button
               key={tab}
               className={`btn ${activeTab === tab ? "" : "btn-secondary"}`}
@@ -397,8 +495,8 @@ export default function AdminPage() {
                           {audit.businessType} • {audit.userEmail || "Anonymous"} • {audit.createdAt ? new Date(audit.createdAt).toLocaleDateString() : "-"}
                         </div>
                       </div>
-                      <button 
-                        className="btn btn-secondary" 
+                      <button
+                        className="btn btn-secondary"
                         style={{ padding: "0.5rem 1rem", width: "auto", fontSize: "0.85rem" }}
                         onClick={() => deleteAudit(audit.id)}
                       >
@@ -443,6 +541,213 @@ export default function AdminPage() {
                 </table>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === "schedules" && (
+          <div className="card">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h2 style={{ color: "var(--secondary)", margin: 0 }}>Scheduled Audits ({schedules.length})</h2>
+              <button
+                className="btn"
+                style={{ padding: "0.5rem 1rem", width: "auto", fontSize: "0.85rem" }}
+                onClick={() => setShowAddSchedule(!showAddSchedule)}
+              >
+                {showAddSchedule ? "Cancel" : "Add Schedule"}
+              </button>
+            </div>
+
+            {showAddSchedule && (
+              <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", marginBottom: "1rem", display: "grid", gap: "0.75rem" }}>
+                <input
+                  className="input"
+                  placeholder="User email"
+                  value={newSchedule.userEmail}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, userEmail: e.target.value })}
+                />
+                <input
+                  className="input"
+                  placeholder="Website URL"
+                  value={newSchedule.link}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, link: e.target.value })}
+                />
+                <input
+                  className="input"
+                  placeholder="Business type"
+                  value={newSchedule.businessType}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, businessType: e.target.value })}
+                />
+                <input
+                  className="input"
+                  placeholder="Goals"
+                  value={newSchedule.goals}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, goals: e.target.value })}
+                />
+                <select
+                  className="input"
+                  value={newSchedule.frequency}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, frequency: e.target.value as "weekly" | "monthly" })}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+                <button
+                  className="btn"
+                  style={{ padding: "0.5rem 1rem", width: "auto", fontSize: "0.85rem" }}
+                  onClick={addSchedule}
+                >
+                  Save Schedule
+                </button>
+              </div>
+            )}
+
+            <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+              {schedules.length === 0 ? (
+                <p style={{ color: "var(--text-muted)" }}>No scheduled audits yet</p>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                      <th style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)" }}>Email</th>
+                      <th style={{ textAlign: "left", padding: "0.5rem", color: "var(--text-muted)" }}>URL</th>
+                      <th style={{ textAlign: "center", padding: "0.5rem", color: "var(--text-muted)" }}>Frequency</th>
+                      <th style={{ textAlign: "center", padding: "0.5rem", color: "var(--text-muted)" }}>Enabled</th>
+                      <th style={{ textAlign: "right", padding: "0.5rem", color: "var(--text-muted)" }}>Last Run</th>
+                      <th style={{ textAlign: "right", padding: "0.5rem", color: "var(--text-muted)" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedules.map((schedule) => (
+                      <tr key={schedule.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "0.5rem" }}>{schedule.userEmail}</td>
+                        <td style={{ padding: "0.5rem", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schedule.link}</td>
+                        <td style={{ textAlign: "center", padding: "0.5rem", textTransform: "capitalize" }}>{schedule.frequency}</td>
+                        <td style={{ textAlign: "center", padding: "0.5rem" }}>
+                          <button
+                            onClick={() => toggleSchedule(schedule.id, !schedule.enabled)}
+                            style={{
+                              background: schedule.enabled ? "#22c55e" : "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "0.25rem 0.75rem",
+                              cursor: "pointer",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {schedule.enabled ? "On" : "Off"}
+                          </button>
+                        </td>
+                        <td style={{ textAlign: "right", padding: "0.5rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                          {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleDateString() : "Never"}
+                        </td>
+                        <td style={{ textAlign: "right", padding: "0.5rem" }}>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: "0.25rem 0.75rem", width: "auto", fontSize: "0.8rem" }}
+                            onClick={() => deleteSchedule(schedule.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "analytics" && (
+          <div className="card">
+            <h2 style={{ color: "var(--secondary)", marginBottom: "1.5rem" }}>Analytics</h2>
+            {!analytics ? (
+              <p style={{ color: "var(--text-muted)" }}>Loading analytics...</p>
+            ) : (
+              <div style={{ display: "grid", gap: "2rem" }}>
+                {/* Lead Funnel */}
+                <div>
+                  <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: "1rem" }}>Lead Funnel</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <div style={{ height: "28px", width: "100%", background: "linear-gradient(90deg, var(--primary), var(--secondary))", borderRadius: "6px", display: "flex", alignItems: "center", paddingLeft: "12px", fontSize: "0.85rem", fontWeight: 600 }}>
+                        Audits: {analytics.auditsByDay.reduce((s, d) => s + d.count, 0)}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <div style={{ height: "28px", width: `${Math.max(analytics.conversionRate, 5)}%`, background: "linear-gradient(90deg, var(--primary), var(--secondary))", borderRadius: "6px", display: "flex", alignItems: "center", paddingLeft: "12px", fontSize: "0.85rem", fontWeight: 600, minWidth: "120px" }}>
+                        Leads: {analytics.totalLeads}
+                      </div>
+                    </div>
+                    <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Conversion: {analytics.conversionRate.toFixed(1)}%</p>
+                  </div>
+                </div>
+
+                {/* Average Scores */}
+                <div>
+                  <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: "1rem" }}>Average Scores</h3>
+                  {(["communication", "aesthetic", "drive", "structure"] as const).map((key) => (
+                    <div key={key} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                      <span style={{ width: "120px", fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "capitalize" }}>{key}</span>
+                      <div style={{ flex: 1, height: "16px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${analytics.avgScores[key]}%`, background: "linear-gradient(90deg, var(--primary), var(--secondary))", borderRadius: "4px" }} />
+                      </div>
+                      <span style={{ width: "40px", textAlign: "right", fontSize: "0.85rem" }}>{Math.round(analytics.avgScores[key])}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Audit Volume */}
+                <div>
+                  <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: "1rem" }}>Audit Volume (30 days)</h3>
+                  <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                    {analytics.auditsByDay.map((day) => {
+                      const maxCount = Math.max(...analytics.auditsByDay.map(d => d.count), 1);
+                      return (
+                        <div key={day.date} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "4px" }}>
+                          <span style={{ width: "80px", fontSize: "0.7rem", color: "var(--text-muted)" }}>{day.date}</span>
+                          <div style={{ flex: 1, height: "16px", background: "rgba(255,255,255,0.03)", borderRadius: "3px", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${(day.count / maxCount) * 100}%`, background: "linear-gradient(90deg, var(--primary), var(--secondary))", borderRadius: "3px", minWidth: day.count > 0 ? "4px" : "0" }} />
+                          </div>
+                          <span style={{ width: "30px", textAlign: "right", fontSize: "0.75rem" }}>{day.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Top Domains + Business Types side by side */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: "1rem" }}>Top Domains</h3>
+                    {analytics.topDomains.length === 0 ? (
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No data yet</p>
+                    ) : (
+                      analytics.topDomains.map((d, i) => (
+                        <div key={d.domain} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.85rem" }}>
+                          <span style={{ color: "var(--text-muted)" }}>{i + 1}. {d.domain}</span>
+                          <span>{d.count}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div>
+                    <h3 style={{ color: "#fff", marginBottom: "1rem", fontSize: "1rem" }}>Business Types</h3>
+                    {analytics.businessTypes.length === 0 ? (
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No data yet</p>
+                    ) : (
+                      analytics.businessTypes.map((bt) => (
+                        <div key={bt.type} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: "0.85rem" }}>
+                          <span style={{ color: "var(--text-muted)" }}>{bt.type}</span>
+                          <span>{bt.count}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

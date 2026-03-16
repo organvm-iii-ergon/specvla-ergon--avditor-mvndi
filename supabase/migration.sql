@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS leads (
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Scheduled audits table
+CREATE TABLE IF NOT EXISTS scheduled_audits (
+  id TEXT PRIMARY KEY,
+  "userEmail" TEXT NOT NULL,
+  link TEXT NOT NULL,
+  "businessType" TEXT NOT NULL,
+  goals TEXT NOT NULL,
+  frequency TEXT NOT NULL DEFAULT 'monthly',
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  "lastRunAt" TIMESTAMP WITH TIME ZONE,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_audits_user_email ON audits("userEmail");
 CREATE INDEX IF NOT EXISTS idx_audits_team_id ON audits("teamId");
@@ -49,15 +62,19 @@ CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members("teamId");
 CREATE INDEX IF NOT EXISTS idx_team_members_email ON team_members(email);
 CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
 CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads("createdAt");
+CREATE INDEX IF NOT EXISTS idx_scheduled_audits_user ON scheduled_audits("userEmail");
+CREATE INDEX IF NOT EXISTS idx_scheduled_audits_enabled ON scheduled_audits(enabled);
 
 -- Row Level Security (optional, recommended for production)
 ALTER TABLE audits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scheduled_audits ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access (used by the app's server-side code)
 CREATE POLICY "Service role full access" ON audits FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON teams FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON team_members FOR ALL USING (true);
 CREATE POLICY "Service role full access" ON leads FOR ALL USING (true);
+CREATE POLICY "Service role full access" ON scheduled_audits FOR ALL USING (true);

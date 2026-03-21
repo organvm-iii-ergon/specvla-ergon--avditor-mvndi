@@ -5,7 +5,7 @@ import { auth, signIn, signOut } from "@/auth";
 import { PostHogProvider } from "@/providers/PostHogProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { AmbientResonanceProvider } from "@/components/AmbientResonance";
-import SpaceTimeBackground from "@/components/SpaceTimeBackground";
+import ClientBackground from "@/components/ClientBackground";
 
 export const metadata: Metadata = {
   title: {
@@ -40,7 +40,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SpaceTimeBackground />
+        <ClientBackground />
         <AmbientResonanceProvider>
           <AuthProvider>
             <PostHogProvider>

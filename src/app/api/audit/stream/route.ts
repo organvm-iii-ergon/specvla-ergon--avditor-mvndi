@@ -7,7 +7,7 @@ import { saveAudit } from "@/lib/db";
 import crypto from "crypto";
 import { auth } from "@/auth";
 import { createRateLimiter, getClientIP } from "@/lib/rate-limit";
-import { createAIModel, type AIProviderType } from "@/services/aiModelFactory";
+import { createAIModel, type AIProvider } from "@/services/aiModelFactory";
 import { AuditSchema } from "@/lib/schemas";
 
 const rateLimiter = createRateLimiter({ max: 5, windowMs: 60 * 60 * 1000 });

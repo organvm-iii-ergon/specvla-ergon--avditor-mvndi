@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { createAIModel, type AIProviderType } from "./aiModelFactory";
+import { createAIModel, type AIProvider } from "./aiModelFactory";
 import { getCosmicAuditPrompt } from "./promptTemplates";
 import { evaluateAudit } from "./evaluator";
 import { scrapeWebsite } from "./scraper";
@@ -10,7 +10,7 @@ export interface OrchestratedAuditRequest {
   link: string;
   businessType: string;
   goals: string;
-  provider: AIProviderType;
+  provider: AIProvider;
   auth: string;
   isPro: boolean;
   language?: string;

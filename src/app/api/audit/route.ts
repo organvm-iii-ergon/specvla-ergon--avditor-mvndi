@@ -4,7 +4,7 @@ import { sendAuditWebhook } from "@/services/webhook";
 import crypto from "crypto";
 import { auth } from "@/auth";
 import { createRateLimiter, getClientIP } from "@/lib/rate-limit";
-import { type AIProviderType } from "@/services/aiProvider";
+import { type AIProvider } from "@/services/aiProvider";
 import { orchestrateCosmicAudit } from "@/services/aiOrchestrator";
 import { z } from "zod";
 

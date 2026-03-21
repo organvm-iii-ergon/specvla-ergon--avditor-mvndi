@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Growth Auditor AI ✦
 
-## Getting Started
+[![Status](https://img.shields.io/badge/status-omega-blueviolet?style=for-the-badge)](https://github.com/organvm-iii-ergon/growth-auditor)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 
-First, run the development server:
+> **Aligning digital potential with cosmic timing.**  
+> Growth Auditor AI is a production-grade, multi-tenant platform for creators and agencies to perform deep-dive growth audits using advanced AI.
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+# 1. Clone & Install
+git clone https://github.com/organvm-iii-ergon/growth-auditor.git
+cd growth-auditor
+npm install
+
+# 2. Configure Environment
+cp .env.local.example .env.local # Fill in Gemini/Stripe/Resend keys
+
+# 3. Launch the Portal
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` to begin your first manifestation.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🌌 Core Pillars
 
-## Learn More
+- **Mercury (Communication):** Content clarity and persuasive alignment.
+- **Venus (Aesthetic):** Visual harmony and brand attraction.
+- **Mars (Drive):** Conversion energy and actionable calls to action.
+- **Saturn (Structure):** Technical SEO and foundational performance.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Advanced Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **LLM-as-a-Judge:** Automated quality evaluation loop for every audit.
+- **The Growth Vault:** Gated library of proprietary strategies and templates.
+- **Agency Branding:** White-label PDF reports with custom logos.
+- **Collaborative Teams:** Shared audits and member management for collectives.
+- **Public API:** Programmatic analysis via Personal Access Tokens (PATs).
+- **Edge Performance:** Core engine routes optimized for global low-latency.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📐 Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```mermaid
+graph TD
+    User((User)) --> Web[Next.js App Router]
+    Web --> Auth[NextAuth / Enterprise Identity]
+    Web --> API[Edge API Routes]
+    API --> Scraper[Recursive Scraper]
+    API --> AI[Multi-Provider AI Factory]
+    API --> Eval[LLM Evaluator Judge]
+    API --> DB[(SQLite / Supabase)]
+    API --> PDF[Puppeteer PDF Service]
+    API --> Webhook[User Integrations]
+    AI --> Gemini[Google Gemini 1.5 Flash]
+    AI --> RAG[Strategy Knowledge Base]
+```
+
+---
+
+## 🧪 Modular Testament (1:X Testing)
+
+The project adheres to strict modular design principles. Every service and component is self-contained and rigorously tested.
+
+```bash
+# Run the full suite (225+ tests)
+npm run test
+
+# Run E2E Playwright tests
+npm run test:e2e
+```
+
+---
+
+## 🗺️ Roadmap to Omega
+
+The strategic evolution from functional utility to a "Diamond State" ecosystem is documented in our [Path to Omega](.claude/plans/2026-03-21-path-to-omega.md).
+
+---
+
+*"Build small digital machines that sell while you sleep."*

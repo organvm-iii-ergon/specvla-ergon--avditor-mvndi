@@ -6,11 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "lint": "eslint --config .config/eslint.config.mjs",
+    "test": "vitest run --config .config/vitest.config.ts",
+    "test:watch": "vitest --config .config/vitest.config.ts",
+    "test:e2e": "playwright test --config .config/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config .config/playwright.config.ts --ui"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.58",

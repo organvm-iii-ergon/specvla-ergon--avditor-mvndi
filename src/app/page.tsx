@@ -8,59 +8,44 @@ import { getStoredApiKey } from "@/services/aiProvider";
 import { useSession } from "next-auth/react";
 import type { TeamRecord } from "@/lib/db";
 
-// A simple moon phase calculation based on known new moon date
+const PILLARS = [
+  { name: "Mercury", glyph: "☿", desc: "Communication", color: "#7000ff" },
+  { name: "Venus", glyph: "♀", desc: "Aesthetic", color: "#00d4ff" },
+  { name: "Mars", glyph: "♂", desc: "Drive", color: "#ff0070" },
+  { name: "Saturn", glyph: "♄", desc: "Structure", color: "#ffcc00" },
+];
+
 function getMoonPhase() {
-  // Known new moon: Jan 11, 2024
   const LUNAR_MONTH = 29.53058867;
   const KNOWN_NEW_MOON = new Date("2024-01-11T11:57:00Z").getTime();
   const now = Date.now();
-  
   const diff = now - KNOWN_NEW_MOON;
   const days = diff / (1000 * 60 * 60 * 24);
   const phase = days % LUNAR_MONTH;
-  
-  if (phase < 1.84) return "New Moon (Sowing Seeds)";
-  if (phase < 5.53) return "Waxing Crescent (Gathering Momentum)";
-  if (phase < 9.22) return "First Quarter (Taking Action)";
-  if (phase < 12.91) return "Waxing Gibbous (Refining Strategy)";
-  if (phase < 16.61) return "Full Moon (Peak Manifestation)";
-  if (phase < 20.30) return "Waning Gibbous (Releasing Resistance)";
-  if (phase < 23.99) return "Last Quarter (Pivoting)";
-  if (phase < 27.68) return "Waning Crescent (Rest & Integration)";
-  return "New Moon (Sowing Seeds)";
+  if (phase < 1.84) return "New Moon";
+  if (phase < 5.53) return "Waxing Crescent";
+  if (phase < 9.22) return "First Quarter";
+  if (phase < 12.91) return "Waxing Gibbous";
+  if (phase < 16.61) return "Full Moon";
+  if (phase < 20.30) return "Waning Gibbous";
+  if (phase < 23.99) return "Last Quarter";
+  return "Waning Crescent";
 }
 
 export default function HomePage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    link: "",
-    businessType: "",
-    goals: "",
-    teamId: ""
-  });
+  const [formData, setFormData] = useState({ link: "", businessType: "", goals: "", teamId: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [planetaryWindow, setPlanetaryWindow] = useState("");
-  const [totalAudits, setTotalAudits] = useState(0);
+  const [showForm, setShowForm] = useState(false);
   const [teams, setTeams] = useState<TeamRecord[]>([]);
   const { data: session } = useSession();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe: getMoonPhase uses Date.now(), must run client-side only
     setPlanetaryWindow(getMoonPhase());
-
-    fetch("/api/stats/public")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.totalAudits > 0) setTotalAudits(data.totalAudits);
-      })
-      .catch(() => {});
-
     if (session?.user?.email) {
-      fetch("/api/teams")
-        .then(res => res.json())
-        .then(data => setTeams(data))
-        .catch(() => {});
+      fetch("/api/teams").then(res => res.json()).then(data => setTeams(data)).catch(() => {});
     }
   }, [session]);
 
@@ -68,167 +53,91 @@ export default function HomePage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const apiKey = getStoredApiKey(); // allow-secret
-
     if (!apiKey) {
-      setError("Please configure your AI provider API key in Settings first.");
+      setError("Please configure your AI key in Settings.");
       setLoading(false);
       return;
     }
-
-    const auditRequest = { 
-      link: formData.link, 
-      businessType: formData.businessType, 
-      goals: formData.goals,
-      teamId: formData.teamId
-    };
-    
-    // Store only the form data in sessionStorage, NOT the API key
-    sessionStorage.setItem("current_audit_request", JSON.stringify(auditRequest));
-    
-    // Clear any previous cached result to force a fresh run
+    sessionStorage.setItem("current_audit_request", JSON.stringify(formData));
     sessionStorage.removeItem("current_audit_result");
-    
     router.push("/results");
   };
 
   return (
     <main className="main">
       <div className="hero">
-        <div className="astro-badge" aria-label="Current Planetary Window">
-          <span aria-hidden="true">✧</span>
-          {planetaryWindow}
-        </div>
-        <h1>Decode Your Digital Bottlenecks in 60 Seconds</h1>
-        <p>AI-powered growth audits that blend data science with strategic alignment. Get actionable insights for your website, brand, or social presence.</p>
-
-        <div className="hero-features">
-          <div className="hero-feature-card">
-            <span className="hero-feature-icon" aria-hidden="true">☿</span>
-            <strong>Mercury</strong>
-            <span>Communication &amp; Messaging Clarity</span>
-          </div>
-          <div className="hero-feature-card">
-            <span className="hero-feature-icon" aria-hidden="true">♀</span>
-            <strong>Venus</strong>
-            <span>Aesthetic &amp; Brand Appeal</span>
-          </div>
-          <div className="hero-feature-card">
-            <span className="hero-feature-icon" aria-hidden="true">♂</span>
-            <strong>Mars</strong>
-            <span>Drive &amp; Conversion Power</span>
-          </div>
-          <div className="hero-feature-card">
-            <span className="hero-feature-icon" aria-hidden="true">♄</span>
-            <strong>Saturn</strong>
-            <span>Structure &amp; Technical Foundation</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="btn hero-cta"
-          onClick={() => document.getElementById("audit-form")?.scrollIntoView({ behavior: "smooth" })}
-        >
-          Get Your Free Audit
-        </button>
-
-        {totalAudits > 0 && (
-          <p className="hero-stats">
-            {totalAudits.toLocaleString()} audit{totalAudits !== 1 ? "s" : ""} generated and counting
-          </p>
-        )}
-      </div>
-
-      <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center" }}>
-        <div className="astro-glow" style={{ top: "-50px", left: "20%" }}></div>
-        <div className="astro-glow" style={{ bottom: "-50px", right: "20%", opacity: 0.5 }}></div>
+        <div className="astro-badge">✦ {planetaryWindow} Window Active</div>
+        <h1 style={{ fontSize: "clamp(2.5rem, 12vw, 6rem)", marginBottom: "2rem" }}>
+          Digital <span style={{ background: "var(--ocean-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Alignment</span>
+        </h1>
         
-        <div className="card" id="audit-form">
-          <form onSubmit={handleSubmit}>
-            <AuditPresets
-              onSelect={(preset) =>
-                setFormData({ ...formData, businessType: preset.businessType, goals: preset.goals })
-              }
-            />
-            <div className="form-group">
-              <label htmlFor="link">URL / Social Handle</label>
-              <input 
-                id="link"
-                type="text" 
-                className="input" 
-                placeholder="https://yourwebsite.com" 
-                required
-                aria-required="true"
-                aria-label="Website URL or Social Handle"
-                value={formData.link}
-                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-              />
+        {/* SIGNAL-BASED LANDING: 4 Pillars as prime visual directive */}
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(2, 1fr)", 
+          gap: "1rem", 
+          maxWidth: "600px", 
+          margin: "0 auto 3rem" 
+        }}>
+          {PILLARS.map(p => (
+            <div key={p.name} className="card" style={{ 
+              padding: "2rem 1rem", 
+              textAlign: "center", 
+              borderWidth: "2px",
+              borderColor: "rgba(255,255,255,0.05)"
+            }}>
+              <div style={{ fontSize: "3rem", color: p.color, marginBottom: "0.5rem", textShadow: `0 0 20px ${p.color}44` }}>{p.glyph}</div>
+              <div style={{ fontWeight: 800, fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>{p.name}</div>
+              <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{p.desc}</div>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="business">Domain / Niche</label>
-              <input 
-                id="business"
-                type="text" 
-                className="input" 
-                placeholder="e.g., Creative Studio, E-commerce" 
-                required
-                aria-required="true"
-                aria-label="Business Domain or Niche"
-                value={formData.businessType}
-                onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="goals">Target Manifestation</label>
-              <textarea 
-                id="goals"
-                className="input" 
-                style={{ minHeight: "100px", resize: "none" }}
-                placeholder="What growth goals are you aiming for?" 
-                required
-                aria-required="true"
-                aria-label="Target Growth Goals"
-                value={formData.goals}
-                onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
-              />
-            </div>
-
-            {teams.length > 0 && (
-              <div className="form-group">
-                <label htmlFor="team">Assign to Team (Optional)</label>
-                <select
-                  id="team"
-                  className="input"
-                  value={formData.teamId}
-                  onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}
-                >
-                  <option value="">Personal Audit</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <ApiKeyInline />
-
-            {error && (
-              <p role="alert" style={{ color: "var(--accent)", marginBottom: "1.5rem", fontSize: "0.9rem", textAlign: "center" }}>
-                {error}
-              </p>
-            )}
-
-            <button type="submit" className="btn" disabled={loading} aria-busy={loading}>
-              {loading ? "Aligning Data..." : "Generate Cosmic Audit"}
-            </button>
-          </form>
+          ))}
         </div>
+
+        <p style={{ marginBottom: "2.5rem", opacity: 0.8 }}>Decode digital bottlenecks through cosmic intelligence.</p>
+
+        {!showForm ? (
+          <button 
+            className="btn hero-cta" 
+            style={{ width: "auto", minWidth: "280px", padding: "1.25rem 3rem" }}
+            onClick={() => setShowForm(true)}
+          >
+            Initiate Alignment ✦
+          </button>
+        ) : (
+          <div style={{ animation: "fadeIn 0.5s ease-out", width: "100%", maxWidth: "500px", margin: "0 auto" }}>
+            <div className="card" id="audit-form" style={{ textAlign: "left" }}>
+              <form onSubmit={handleSubmit}>
+                <AuditPresets onSelect={(preset) => setFormData({ ...formData, ...preset })} />
+                <div className="form-group">
+                  <label>URL / Social Handle</label>
+                  <input className="input" type="url" required placeholder="https://..." value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Business Niche</label>
+                  <input className="input" type="text" required placeholder="e.g. Creator, SaaS" value={formData.businessType} onChange={(e) => setFormData({ ...formData, businessType: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Target Manifestation</label>
+                  <textarea className="input" style={{ minHeight: "80px" }} required placeholder="What are you aiming for?" value={formData.goals} onChange={(e) => setFormData({ ...formData, goals: e.target.value })} />
+                </div>
+                {teams.length > 0 && (
+                  <div className="form-group">
+                    <label>Assign to Team</label>
+                    <select className="input" value={formData.teamId} onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}>
+                      <option value="">Personal</option>
+                      {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                <ApiKeyInline />
+                {error && <p style={{ color: "var(--accent)", marginBottom: "1rem", fontSize: "0.8rem" }}>{error}</p>}
+                <button type="submit" className="btn" disabled={loading}>{loading ? "Aligning..." : "Generate Audit"}</button>
+                <button type="button" className="btn btn-secondary" style={{ marginTop: "1rem" }} onClick={() => setShowForm(false)}>Cancel</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

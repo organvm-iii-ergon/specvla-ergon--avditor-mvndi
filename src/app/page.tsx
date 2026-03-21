@@ -38,15 +38,18 @@ export default function HomePage() {
   const [formData, setFormData] = useState({ link: "", businessType: "", goals: "", teamId: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [planetaryWindow, setPlanetaryWindow] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [teams, setTeams] = useState<TeamRecord[]>([]);
   const { data: session } = useSession();
 
+  const planetaryWindow = typeof window !== "undefined" ? getMoonPhase() : "";
+
   useEffect(() => {
-    setPlanetaryWindow(getMoonPhase());
     if (session?.user?.email) {
-      fetch("/api/teams").then(res => res.json()).then(data => setTeams(data)).catch(() => {});
+      fetch("/api/teams")
+        .then(res => res.json())
+        .then(data => setTeams(data))
+        .catch(err => console.error("Failed to fetch teams", err));
     }
   }, [session]);
 
@@ -144,6 +147,15 @@ export default function HomePage() {
                 <label htmlFor="goals">Target Manifestation</label>
                 <textarea id="goals" className="input" style={{ minHeight: "100px" }} required placeholder="What are you aiming for?" value={formData.goals} onChange={(e) => setFormData({ ...formData, goals: e.target.value })} />
               </div>
+              {teams.length > 0 && (
+                <div className="form-group">
+                  <label htmlFor="team">Assign to Team</label>
+                  <select id="team" className="input" value={formData.teamId} onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}>
+                    <option value="">Personal</option>
+                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+              )}
               <ApiKeyInline />
               {error && <p style={{ color: "var(--accent)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>{error}</p>}
               <button type="submit" className="btn" disabled={loading} style={{ fontSize: "1.1rem", padding: "1.25rem" }}>{loading ? "Aligning..." : "Generate Strategic Audit"}</button>

@@ -3,6 +3,54 @@
 import React, { useEffect, useRef } from "react";
 import p5 from "p5";
 
+class Star {
+  x: number;
+  y: number;
+  z: number;
+  pz: number;
+  color: p5.Color;
+  p: p5;
+
+  constructor(p: p5) {
+    this.p = p;
+    this.x = p.random(-p.width * 2, p.width * 2);
+    this.y = p.random(-p.height * 2, p.height * 2);
+    this.z = p.random(p.width * 2);
+    this.pz = this.z;
+    
+    const r = p.random(150, 255);
+    const g = p.random(180, 255);
+    const b = 255;
+    this.color = p.color(r, g, b);
+  }
+
+  update(speed: number) {
+    this.z = this.z - speed;
+    if (this.z < 1) {
+      this.z = this.p.width * 2;
+      this.x = this.p.random(-this.p.width * 2, this.p.width * 2);
+      this.y = this.p.random(-this.p.height * 2, this.p.height * 2);
+      this.pz = this.z;
+    }
+  }
+
+  show(speed: number) {
+    const sx = this.p.map(this.x / this.z, 0, 1, 0, this.p.width / 2);
+    const sy = this.p.map(this.y / this.z, 0, 1, 0, this.p.height / 2);
+
+    const r = this.p.map(this.z, 0, this.p.width * 2, 10, 0);
+
+    const px = this.p.map(this.x / this.pz, 0, 1, 0, this.p.width / 2);
+    const py = this.p.map(this.y / this.pz, 0, 1, 0, this.p.height / 2);
+
+    this.pz = this.z;
+
+    this.p.stroke(this.color);
+    this.p.strokeWeight(r);
+    this.p.line(px, py, sx, sy);
+  }
+}
+
 export default function SpaceTimeBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -10,54 +58,8 @@ export default function SpaceTimeBackground() {
     if (!containerRef.current) return;
 
     const sketch = (p: p5) => {
-      let stars: Star[] = [];
+      const stars: Star[] = [];
       let speed: number = 30;
-
-      class Star {
-        x: number;
-        y: number;
-        z: number;
-        pz: number;
-        color: p5.Color;
-
-        constructor() {
-          this.x = p.random(-p.width * 2, p.width * 2);
-          this.y = p.random(-p.height * 2, p.height * 2);
-          this.z = p.random(p.width * 2);
-          this.pz = this.z;
-          
-          const r = p.random(150, 255);
-          const g = p.random(180, 255);
-          const b = 255;
-          this.color = p.color(r, g, b);
-        }
-
-        update() {
-          this.z = this.z - speed;
-          if (this.z < 1) {
-            this.z = p.width * 2;
-            this.x = p.random(-p.width * 2, p.width * 2);
-            this.y = p.random(-p.height * 2, p.height * 2);
-            this.pz = this.z;
-          }
-        }
-
-        show() {
-          let sx = p.map(this.x / this.z, 0, 1, 0, p.width / 2);
-          let sy = p.map(this.y / this.z, 0, 1, 0, p.height / 2);
-
-          let r = p.map(this.z, 0, p.width * 2, 10, 0);
-
-          let px = p.map(this.x / this.pz, 0, 1, 0, p.width / 2);
-          let py = p.map(this.y / this.pz, 0, 1, 0, p.height / 2);
-
-          this.pz = this.z;
-
-          p.stroke(this.color);
-          p.strokeWeight(r);
-          p.line(px, py, sx, sy);
-        }
-      }
 
       p.setup = () => {
         const canvas = p.createCanvas(window.innerWidth, window.innerHeight);
@@ -67,7 +69,7 @@ export default function SpaceTimeBackground() {
         canvas.style("left", "0");
         canvas.style("z-index", "-5"); // Extreme depth
         for (let i = 0; i < 1500; i++) {
-          stars[i] = new Star();
+          stars[i] = new Star(p);
         }
       };
 
@@ -78,8 +80,8 @@ export default function SpaceTimeBackground() {
         speed = 35 + p.sin(p.frameCount * 0.005) * 15;
         
         for (let i = 0; i < stars.length; i++) {
-          stars[i].update();
-          stars[i].show();
+          stars[i].update(speed);
+          stars[i].show(speed);
         }
       };
 

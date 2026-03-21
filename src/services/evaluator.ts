@@ -44,12 +44,12 @@ export async function evaluateAudit(
 
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     const jsonText = jsonMatch ? jsonMatch[1].trim() : text.trim();
-    const result = JSON.parse(jsonText);
+    const result = JSON.parse(jsonText) as { score?: number; feedback?: string; passed?: boolean };
 
     return {
-      score: result.score || 0,
-      feedback: result.feedback || "No feedback provided",
-      passed: result.passed || false,
+      score: result.score ?? 0,
+      feedback: result.feedback ?? "No feedback provided",
+      passed: !!result.passed,
     };
   } catch (error) {
     console.error("Audit Evaluation Error:", error);

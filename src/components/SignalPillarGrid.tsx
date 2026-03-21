@@ -54,29 +54,14 @@ export default function SignalPillarGrid({ scores }: { scores: Record<string, nu
                 overflow: "hidden"
               }}
             >
-              {/* TRANSPARENT CUT-OUT ICON */}
-              <div style={{ 
-                width: "60px", 
-                height: "60px", 
-                position: "relative",
+              <div style={{
+                width: "50px",
+                height: "50px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "white", // The "filler" that gets cut out
-                borderRadius: "12px",
-                mixBlendMode: "lighten" // Magic blend mode to make white transparent against dark backgrounds? No.
               }}>
-                <div style={{ 
-                  width: "100%", 
-                  height: "100%", 
-                  background: "black", 
-                  position: "absolute",
-                  top: 0, left: 0,
-                  zIndex: 1,
-                  mixBlendMode: "destination-out" as unknown as React.CSSProperties["mixBlendMode"]
-                }}>
-                   <CosmicIcon type={pillar.icon} size="100%" style={{ color: "white" }} />
-                </div>
+                <CosmicIcon type={pillar.icon} size="100%" />
               </div>
 
               <div style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.05em", color: "#fff" }}>{score}</div>

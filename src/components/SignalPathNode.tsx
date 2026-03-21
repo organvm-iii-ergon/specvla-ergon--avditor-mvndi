@@ -43,29 +43,15 @@ export default function SignalPathNode({
           background: isOpen ? "rgba(255,255,255,0.05)" : "var(--glass-bg)"
         }}
       >
-        {/* CUT-OUT ICON FOR PATH NODES */}
-        <div style={{ 
-          width: "50px", 
-          height: "50px", 
-          position: "relative",
+        <div style={{
+          width: "40px",
+          height: "40px",
           display: "flex",
-          alignItems: "center", 
+          alignItems: "center",
           justifyContent: "center",
-          background: "white",
-          borderRadius: "50%",
           flexShrink: 0
         }}>
-          <div style={{ 
-            width: "100%", 
-            height: "100%", 
-            background: "black", 
-            position: "absolute",
-            top: 0, left: 0,
-            zIndex: 1,
-            mixBlendMode: "destination-out" as unknown as React.CSSProperties["mixBlendMode"]
-          }}>
-             <CosmicIcon type={icon} size="60%" style={{ margin: "20%" }} />
-          </div>
+          <CosmicIcon type={icon} size="100%" />
         </div>
 
         <div style={{ flex: 1 }}>

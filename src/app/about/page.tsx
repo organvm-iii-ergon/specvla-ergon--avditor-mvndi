@@ -26,29 +26,15 @@ export default function AboutPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem", marginBottom: "6rem" }}>
           {PILLARS.map(p => (
             <div key={p.name} className="card" style={{ padding: "3rem 2rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              {/* CUT-OUT ICON */}
-              <div style={{ 
-                width: "100px", 
-                height: "100px", 
-                position: "relative",
+              <div style={{
+                width: "80px",
+                height: "80px",
                 display: "flex",
-                alignItems: "center", 
+                alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: "24px",
                 marginBottom: "2rem"
               }}>
-                <div style={{ 
-                  width: "100%", 
-                  height: "100%", 
-                  background: "black", 
-                  position: "absolute",
-                  top: 0, left: 0,
-                  zIndex: 1,
-                  mixBlendMode: "destination-out" as unknown as React.CSSProperties["mixBlendMode"]
-                }}>
-                   <CosmicIcon type={p.icon as IconType} size="70%" style={{ margin: "15%" }} />
-                </div>
+                <CosmicIcon type={p.icon as IconType} size="100%" />
               </div>
 
               <h2 style={{ fontSize: "1.75rem", color: "#fff", marginBottom: "0.25rem" }}>{p.name}</h2>

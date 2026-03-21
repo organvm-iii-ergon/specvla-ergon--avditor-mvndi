@@ -72,18 +72,16 @@ export default function HomePage() {
     <main className="main" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
       
       {/* THE SINGLE PORTAL CARD: Glassmorphism Core */}
-      <div className="card" style={{ 
-        maxWidth: "800px", 
-        padding: "4rem 2rem", 
-        textAlign: "center", 
-        background: "rgba(255,255,255,0.05)", 
-        borderWidth: "1px",
-        borderRadius: "40px",
+      <div className="card" style={{
+        maxWidth: "800px",
+        padding: "4rem 2rem",
+        textAlign: "center",
+        borderRadius: "32px",
         boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
         animation: "fadeIn 1.2s cubic-bezier(0.23, 1, 0.32, 1)"
       }}>
         
-        <div className="astro-badge" style={{ marginBottom: "2rem" }}>✦ {planetaryWindow} Window Active</div>
+        <div className="astro-badge" style={{ marginBottom: "2rem", opacity: 0.5, fontSize: "0.65rem" }} title="Current lunar phase">✦ {planetaryWindow}</div>
         
         <h1 style={{ fontSize: "clamp(2.5rem, 10vw, 5.5rem)", marginBottom: "1rem", letterSpacing: "-0.08em", fontWeight: 900, lineHeight: 0.95 }}>
           Digital <span style={{ background: "var(--ocean-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Alignment</span>
@@ -101,20 +99,18 @@ export default function HomePage() {
           marginBottom: "4rem" 
         }}>
           {PILLARS.map(p => (
-            <div key={p.name} style={{ 
+            <div key={p.name} style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: "1rem"
             }}>
-              {/* BIG BOLD CUT-OUT */}
-              <div style={{ 
-                width: "100px", 
-                height: "100px", 
+              <div style={{
+                width: "80px",
+                height: "80px",
                 display: "flex",
-                alignItems: "center", 
+                alignItems: "center",
                 justifyContent: "center",
-                color: "rgba(255,255,255,0.12)"
               }}>
                 <TransparentIcon type={p.icon} size="100%" />
               </div>

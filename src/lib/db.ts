@@ -1,9 +1,6 @@
-import Database, { Database as DatabaseType } from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import type { Database as DatabaseType } from "better-sqlite3";
 import crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { getConfig } from "./config";
 
 export interface ScheduledAuditRecord {
   id: string;
@@ -45,8 +42,8 @@ export interface TeamMemberRecord {
   createdAt?: string;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || getConfig("supabaseUrl") || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || getConfig("supabaseKey") || "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const useSupabase = !!(supabaseUrl && supabaseKey);
 
 let supabase: SupabaseClient | null = null;
@@ -55,14 +52,20 @@ let db: DatabaseType | null = null;
 if (useSupabase) {
   supabase = createClient(supabaseUrl, supabaseKey);
 } else {
-  const dataDir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  const dbPath = path.join(dataDir, "audits.db");
-  db = new Database(dbPath);
+  // Lazy-load better-sqlite3 to avoid crashing on Vercel's SSR runtime
+  // where native C++ addons may not be available
+  try {
+    const path = require("path");
+    const fs = require("fs");
+    const Database = require("better-sqlite3");
+    const dataDir = path.join(process.cwd(), "data");
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const dbPath = path.join(dataDir, "audits.db");
+    const instance = new Database(dbPath);
 
-  db.exec(`
+    instance.exec(`
     CREATE TABLE IF NOT EXISTS audits (
       id TEXT PRIMARY KEY,
       userEmail TEXT,
@@ -76,7 +79,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS teams (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -85,7 +88,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS team_members (
       id TEXT PRIMARY KEY,
       teamId TEXT NOT NULL,
@@ -96,7 +99,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS leads (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL,
@@ -106,7 +109,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS scheduled_audits (
       id TEXT PRIMARY KEY,
       userEmail TEXT NOT NULL,
@@ -121,7 +124,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       userEmail TEXT PRIMARY KEY,
       plan TEXT NOT NULL,
@@ -131,7 +134,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS audit_feedback (
       id TEXT PRIMARY KEY,
       auditId TEXT NOT NULL,
@@ -143,7 +146,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS integrations (
       id TEXT PRIMARY KEY,
       userEmail TEXT NOT NULL,
@@ -154,7 +157,7 @@ if (useSupabase) {
     )
   `);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS api_tokens (
       id TEXT PRIMARY KEY,
       userEmail TEXT NOT NULL,
@@ -163,6 +166,10 @@ if (useSupabase) {
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+    db = instance;
+  } catch {
+    // Native module unavailable (Vercel serverless) — db stays null
+  }
 }
 
 export async function saveApiToken(email: string, name: string, token: string) { // allow-secret

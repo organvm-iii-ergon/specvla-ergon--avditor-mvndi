@@ -1,6 +1,4 @@
-import Database, { Database as DatabaseType } from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import type { Database as DatabaseType } from "better-sqlite3";
 import crypto from "crypto";
 
 export interface ConfigRecord {
@@ -43,14 +41,17 @@ const defaultConfig: Record<string, string> = {
 let db: DatabaseType | null = null;
 
 try {
+  const path = require("path");
+  const fs = require("fs");
+  const Database = require("better-sqlite3");
   const dataDir = path.join(process.cwd(), "data");
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
   const dbPath = path.join(dataDir, "config.db");
-  db = new Database(dbPath);
+  const instance = new Database(dbPath);
 
-  db.exec(`
+  instance.exec(`
     CREATE TABLE IF NOT EXISTS config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -59,11 +60,12 @@ try {
   `);
 
   for (const [key, value] of Object.entries(defaultConfig)) {
-    const existing = db.prepare("SELECT value FROM config WHERE key = ?").get(key);
+    const existing = instance.prepare("SELECT value FROM config WHERE key = ?").get(key);
     if (!existing) {
-      db.prepare("INSERT INTO config (key, value) VALUES (?, ?)").run(key, value);
+      instance.prepare("INSERT INTO config (key, value) VALUES (?, ?)").run(key, value);
     }
   }
+  db = instance;
 } catch {
   // Read-only filesystem (Vercel serverless) — fall back to in-memory defaults
   db = null;

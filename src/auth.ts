@@ -2,13 +2,31 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import GitHub from "next-auth/providers/github"
-import { getConfig } from "./lib/config"
-import { getSubscription } from "./lib/db"
+
+// Lazy-load config and db to avoid triggering better-sqlite3 native module
+// at import time — this crashes Vercel's SSR runtime
+function safeGetConfig(key: string): string | null {
+  try {
+    const { getConfig } = require("./lib/config");
+    return getConfig(key);
+  } catch {
+    return null;
+  }
+}
+
+async function safeGetSubscription(email: string) {
+  try {
+    const { getSubscription } = require("./lib/db");
+    return await getSubscription(email);
+  } catch {
+    return null;
+  }
+}
 
 const ADMIN_EMAILS = (() => {
   const env = process.env.ADMIN_EMAILS;
   if (env) return env.split(",");
-  const config = getConfig("adminEmails");
+  const config = safeGetConfig("adminEmails");
   return config ? config.split(",") : ["admin@growthauditor.ai"];
 })();
 
@@ -30,14 +48,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       authorize: async (credentials) => {
         // allow-secret
-        const password = getConfig("authPassword") || "cosmic"; // allow-secret
+        const password = safeGetConfig("authPassword") || "cosmic"; // allow-secret
         if (credentials.password === password && typeof credentials.email === "string") { // allow-secret
           const isAdmin = ADMIN_EMAILS.some(e => credentials.email === e.trim());
-          return { 
-            id: "1", 
-            email: credentials.email, 
+          return {
+            id: "1",
+            email: credentials.email,
             name: credentials.email.split("@")[0],
-            isAdmin 
+            isAdmin
           }
         }
         return null
@@ -56,8 +74,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         const isAdmin = ADMIN_EMAILS.some(e => user.email === e.trim());
         token.isAdmin = isAdmin;
-        
-        const sub = await getSubscription(user.email as string);
+
+        const sub = await safeGetSubscription(user.email as string);
         token.isPro = sub?.plan === "pro" && sub?.status === "active";
       }
       return token;

@@ -6,6 +6,7 @@ import { PostHogProvider } from "@/providers/PostHogProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { AmbientResonanceProvider } from "@/components/AmbientResonance";
 import SpaceTimeBackground from "@/components/SpaceTimeBackground";
+
 export const metadata: Metadata = {
   title: {
     default: "Growth Auditor AI | Cosmic Strategy & Digital Alignment",
@@ -27,14 +28,7 @@ export const metadata: Metadata = {
   },
 };
 
-function safeGetAllConfig(): Record<string, string> {
-  try {
-    const { getAllConfig } = require("@/lib/config");
-    return getAllConfig();
-  } catch {
-    return {};
-  }
-}
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Growth Auditor";
 
 export default async function RootLayout({
   children,
@@ -42,25 +36,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  const config = safeGetAllConfig();
-  const appName = config.appName || process.env.NEXT_PUBLIC_APP_NAME || "Growth Auditor";
-  const primaryColor = config.primaryColor || "";
-  const accentColor = config.accentColor || "";
-  const faviconUrl = config.faviconUrl || "";
-  const customCss = config.customCss || "";
 
   return (
     <html lang="en">
-      {faviconUrl && <link rel="icon" href={faviconUrl} />}
-      {(primaryColor || accentColor) && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          :root {
-            ${primaryColor ? `--primary: ${primaryColor};` : ''}
-            ${accentColor ? `--secondary: ${accentColor}; --accent: ${accentColor};` : ''}
-          }
-        `}} />
-      )}
-      {customCss && <style dangerouslySetInnerHTML={{ __html: customCss }} />}
       <body>
         <SpaceTimeBackground />
         <AmbientResonanceProvider>
@@ -68,7 +46,7 @@ export default async function RootLayout({
             <PostHogProvider>
               <div className="container" style={{ position: "relative", zIndex: 1 }}>
                 <nav className="nav">
-                  <Link href="/" className="logo">{appName || "Growth Auditor.ai"}</Link>
+                  <Link href="/" className="logo">{APP_NAME}</Link>
                   <div className="nav-links">
                     <Link href="/" className="nav-link">Audit</Link>
                     <Link href="/compare" className="nav-link">Compare</Link>

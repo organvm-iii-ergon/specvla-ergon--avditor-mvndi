@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ProBadge from "@/components/ProBadge";
-import CosmicIcon from "@/components/CosmicIcons";
+import CosmicIcon, { IconType } from "@/components/CosmicIcons";
 
 const RESOURCES = [
   {

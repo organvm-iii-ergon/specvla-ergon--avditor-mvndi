@@ -11,9 +11,10 @@ interface TransparentIconProps {
 }
 
 /**
- * TRANSPARENT CUT-OUT ICON
- * Uses an SVG with a mask to create a "hole" through its parent container.
- * This reveals the animated p5.js background.
+ * THE ICEBERG HOLE
+ * Implements the "Iceberg Tip" by literalizing the transparent cut-out.
+ * Uses mix-blend-mode: destination-out to punch a hole through 
+ * the glassmorphism card, revealing the submerged p5.js space-time.
  */
 export default function TransparentIcon({ type, size = "100%", className, style }: TransparentIconProps) {
   return (
@@ -25,35 +26,17 @@ export default function TransparentIcon({ type, size = "100%", className, style 
         display: "flex", 
         alignItems: "center", 
         justifyContent: "center",
+        mixBlendMode: "destination-out" as any,
+        background: "transparent",
         ...style 
       }}
     >
       <svg 
         viewBox="0 0 24 24" 
+        fill="black" 
         style={{ width: "100%", height: "100%" }}
       >
-        <defs>
-          <mask id={`mask-${type}`}>
-            {/* White reveals, Black hides (cuts out) */}
-            <rect width="24" height="24" fill="white" />
-            <path 
-              d={ICON_PATHS[type]} 
-              fill="black" 
-              stroke="black" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-            />
-          </mask>
-        </defs>
-        
-        {/* This rect is the "solid" part of the icon area, with the path cut out */}
-        <rect 
-          width="24" 
-          height="24" 
-          fill="currentColor" 
-          mask={`url(#mask-${type})`} 
-        />
+        <path d={ICON_PATHS[type]} />
       </svg>
     </div>
   );

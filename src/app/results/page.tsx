@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import Loader from "@/components/Loader";
-import SignalPillarGrid from "@/components/SignalPillarGrid";
 import SignalPathNode from "@/components/SignalPathNode";
 import AlignmentSigil from "@/components/AlignmentSigil";
 import ChatBox from "@/components/ChatBox";
@@ -284,8 +283,8 @@ export default function ResultsPage() {
           <span aria-hidden="true">✦</span>
           Audit Manifested {((session?.user as any)?.isPro || (session?.user as any)?.isAdmin) && <ProBadge />}
         </div>
-        <h1>Strategic Alignment</h1>
-        <p>Your digital presence, disclosed through four cosmic signals.</p>
+        <h1 style={{ letterSpacing: "-0.06em", fontWeight: 900 }}>Strategic Alignment</h1>
+        <p>A procedural identity derived from your digital footprint.</p>
         
         <div style={{ marginTop: "1rem" }}>
           <ShareButtons
@@ -296,10 +295,10 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      <div className="container" style={{ width: "100%", maxWidth: "800px" }}>
+      <div className="container" style={{ width: "100%", maxWidth: "900px" }}>
         
-        {/* ICEBERG TIP: The Alignment Sigil */}
-        <section style={{ marginBottom: "3rem" }}>
+        {/* THE SINGLE HERO CARD: Alignment Sigil */}
+        <section style={{ marginBottom: "4rem" }}>
           {scores && <AlignmentSigil scores={scores} />}
         </section>
 
@@ -308,9 +307,9 @@ export default function ResultsPage() {
           <button 
             onClick={() => setShowSubmerged(!showSubmerged)}
             className="btn btn-secondary"
-            style={{ width: "100%", marginBottom: "1.5rem", background: "rgba(255,255,255,0.03)" }}
+            style={{ width: "100%", marginBottom: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "100px", padding: "1.25rem" }}
           >
-            {showSubmerged ? "↑ Submerge Detailed Report" : "↓ Explore Submerged Technical Data"}
+            {showSubmerged ? "↑ Submerge Detailed Intelligence" : "↓ Explore Submerged Strategic Data"}
           </button>
 
           {showSubmerged && (
@@ -318,33 +317,32 @@ export default function ResultsPage() {
               ref={reportRef} 
               className="card" 
               style={{ 
-                animation: "fadeIn 0.5s cubic-bezier(0.23, 1, 0.32, 1)", 
-                padding: "3rem 2rem",
-                background: "rgba(0,0,0,0.4)"
+                animation: "fadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1)", 
+                padding: "4rem 3rem",
+                background: "rgba(0,0,0,0.5)"
               }}
             >
               <div className="audit-content">
                 <ReactMarkdown>{audit}</ReactMarkdown>
               </div>
-              <div style={{ marginTop: "3rem", textAlign: "center" }}>
-                <button onClick={downloadPDF} disabled={isDownloading} className="btn" style={{ maxWidth: "300px" }}>
-                  {isDownloading ? "Generating PDF..." : "Export Strategic Report"}
+              <div style={{ marginTop: "4rem", textAlign: "center" }}>
+                <button onClick={downloadPDF} disabled={isDownloading} className="btn" style={{ maxWidth: "300px", borderRadius: "100px" }}>
+                  {isDownloading ? "Generating PDF..." : "Export Strategic Manifest"}
                 </button>
               </div>
             </div>
           )}
         </section>
 
-        {/* FEEDBACK LOOP */}
         <EmailGate auditId={auditId}>
           <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-              {feedbackSent ? "Thank you for aligning our data! ✦" : "Was this cosmic alignment helpful?"}
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem", opacity: 0.6 }}>
+              {feedbackSent ? "Data alignment recorded. ✦" : "Was this strategic disclosure helpful?"}
             </p>
             {!feedbackSent && (
-              <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-                <button onClick={() => handleFeedback(1)} className="btn-secondary" style={{ padding: "0.5rem 1.5rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px" }}>👍</button>
-                <button onClick={() => handleFeedback(0)} className="btn-secondary" style={{ padding: "0.5rem 1.5rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px" }}>👎</button>
+              <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem" }}>
+                <button onClick={() => handleFeedback(1)} className="btn-secondary" style={{ padding: "0.5rem 2rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px", borderRadius: "50%" }}>👍</button>
+                <button onClick={() => handleFeedback(0)} className="btn-secondary" style={{ padding: "0.5rem 2rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px", borderRadius: "50%" }}>👎</button>
               </div>
             )}
           </div>
@@ -352,16 +350,15 @@ export default function ResultsPage() {
 
         <ChatBox auditContext={audit} />
 
-        {/* ACTION NODES: Signal-Based CTA */}
-        <div className="upsell-section" style={{ textAlign: "center", marginBottom: "6rem" }}>
-          <h2 style={{ marginBottom: "2.5rem", fontSize: "1.75rem", letterSpacing: "-0.04em" }}>Paths to Manifestation</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div className="upsell-section" style={{ textAlign: "center", marginBottom: "8rem" }}>
+          <h2 style={{ marginBottom: "3rem", fontSize: "2.5rem", letterSpacing: "-0.06em", fontWeight: 900 }}>Paths to Manifestation</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <SignalPathNode 
               pathNumber={1} 
               title="The Builder" 
               icon="hammer"
               color="#7000ff"
-              description="Direct expert execution. We implement the submerged strategy for you to ensure perfect technical and creative alignment." 
+              description="Direct expert execution. We implement the submerged strategy for you to ensure perfect technical and creative alignment. Full disclosure of proprietary playbooks included." 
               buttonText="Inquire for Execution" 
               isPrimary={true} 
             />
@@ -370,7 +367,7 @@ export default function ResultsPage() {
               title="The Vault" 
               icon="key"
               color="#00d4ff"
-              description="Access proprietary templates and actionable blueprints. This resource is gated behind our Pro membership." 
+              description="Access proprietary templates and actionable blueprints. This high-density resource is gated behind our professional alignment tier." 
               buttonText="Unlock the Vault" 
             />
             <SignalPathNode 
@@ -387,42 +384,38 @@ export default function ResultsPage() {
 
       <style jsx global>{`
         .audit-content h1, .audit-content h2, .audit-content h3 {
-          margin-top: 2rem;
-          margin-bottom: 1rem;
+          margin-top: 3rem;
+          margin-bottom: 1.5rem;
           color: #fff;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.04em;
+          font-weight: 800;
         }
         @media (min-width: 769px) {
           .audit-content h1, .audit-content h2, .audit-content h3 {
-            margin-top: 3rem;
-            margin-bottom: 1.5rem;
+            margin-top: 4rem;
+            margin-bottom: 2rem;
           }
         }
         .audit-content h1:first-child, .audit-content h2:first-child {
           margin-top: 0;
         }
         .audit-content p {
-          margin-bottom: 1.25rem;
-          line-height: 1.6;
-          color: var(--foreground);
-          font-size: 1rem;
-        }
-        @media (min-width: 769px) {
-          .audit-content p {
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-          }
+          margin-bottom: 1.5rem;
+          line-height: 1.8;
+          color: rgba(255,255,255,0.8);
+          font-size: 1.1rem;
         }
         .audit-content ul, .audit-content ol {
-          margin-bottom: 1.5rem;
-          padding-left: 1.25rem;
+          margin-bottom: 2rem;
+          padding-left: 1.5rem;
         }
         .audit-content li {
-          margin-bottom: 0.5rem;
-          color: var(--text-muted);
+          margin-bottom: 1rem;
+          color: rgba(255,255,255,0.6);
         }
         .audit-content strong {
           color: var(--secondary);
+          font-weight: 700;
         }
       `}</style>
     </main>

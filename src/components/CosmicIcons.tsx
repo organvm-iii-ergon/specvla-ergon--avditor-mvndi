@@ -11,14 +11,15 @@ interface CosmicIconProps {
   style?: React.CSSProperties;
 }
 
+// ULTRA-BOLD, INSTITUTIONAL SHAPES
 export const ICON_PATHS: Record<IconType, string> = {
-  mercury: "M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-7a3 3 0 0 0-3 3c0 .34.05.67.14 1h5.72c.09-.33.14-.66.14-1a3 3 0 0 0-3-3zm0 19v3m-4-1.5h8",
-  venus: "M12 4a6 4 0 1 0 0 12 6 4 0 0 0 0-12zM12 16v6m-3-3h6",
-  mars: "M10 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm6-6h6m-3-3v6m-3-3 3.5-3.5",
-  saturn: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm-9 4c0-2 4-4 9-4s9 2 9 4-4 4-9 4-9-2-9-4z",
-  hammer: "m12 15 9-9-3-3-9 9v3h3zM2 22l5-5m3-1 2 2",
-  key: "M7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm3 0 11 10-3 3-2-2-2 2-4-4",
-  eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm11 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
+  mercury: "M12 2a4 4 0 0 0-4 4c0 .5.1 1 .3 1.5h7.4c.2-.5.3-1 .3-1.5a4 4 0 0 0-4-4zm0 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm0 14v3m-5-1.5h10",
+  venus: "M12 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 16v7m-5-3.5h10",
+  mars: "M10 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm10 0h4v4m-3-3-5 5",
+  saturn: "M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm-10 6c0-4 5-6 10-6s10 2 10 6-5 6-10 6-10-2-10-6z",
+  hammer: "M22 7l-4-4-10 10 2 2-3 3-2-2-3 3 5 5 3-3-2-2 3-3 2 2 9-9z",
+  key: "M8 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm4 12l10 8-4 4-3-3-3 3-5-5",
+  eye: "M12 4C4 4 0 12 0 12s4 8 12 8 12-8 12-8-4-8-12-8zm0 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"
 };
 
 export default function CosmicIcon({ type, size = "100%", className, style }: CosmicIconProps) {
@@ -34,7 +35,13 @@ export default function CosmicIcon({ type, size = "100%", className, style }: Co
         ...style 
       }}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "100%", height: "100%" }}>
+      <svg 
+        viewBox="0 0 24 24" 
+        fill="currentColor" 
+        stroke="currentColor" 
+        strokeWidth="1.5" 
+        style={{ width: "100%", height: "100%" }}
+      >
         <path d={ICON_PATHS[type]} />
       </svg>
     </div>

@@ -57,14 +57,20 @@ export async function orchestrateCosmicAudit(
   });
 
   let parsedResult = parseAIResponse(text);
+  
+  // 2.5 PROPRIETARY SCRUBBER
+  // If user is not Pro, we scrub technical details and replace with "Alluded Depth"
+  if (!isPro) {
+    parsedResult.markdownAudit = scrubProprietaryInfo(parsedResult.markdownAudit);
+  }
+
   let iterations = 1;
 
   // 3. Latent Evaluation Loop (LLM-as-a-Judge)
-  // Submerged logic: The user never sees this struggle for alignment.
   const evaluation = await evaluateAudit(parsedResult.markdownAudit, data.provider, credential);
   
   if (!evaluation.passed && iterations < 2) {
-    const retryPrompt = `${prompt}\n\nREFINEMENT NEEDED: Previous attempt scored ${evaluation.score}/100. Feedback: ${evaluation.feedback}. Align more deeply.`;
+    const retryPrompt = `${prompt}\n\nREFINEMENT NEEDED: Previous attempt scored ${evaluation.score}/100. Feedback: ${evaluation.feedback}. Ensure absolute alignment with the Deep-Disclosure covenant.`;
     
     const retryResult = await generateText({
       model,
@@ -75,8 +81,15 @@ export async function orchestrateCosmicAudit(
     });
 
     parsedResult = parseAIResponse(retryResult.text);
+    if (!isPro) {
+      parsedResult.markdownAudit = scrubProprietaryInfo(parsedResult.markdownAudit);
+    }
     iterations++;
   }
+
+  // Prepend the Disclosure Warning
+  const disclosurePrefix = `> **PROPRIETARY DISCLOSURE:** This audit contains high-level strategic signals. Technical implementation specifics and deep-disclosure playbooks are gated behind the [Paths to Manifestation] below.\n\n`;
+  parsedResult.markdownAudit = disclosurePrefix + parsedResult.markdownAudit;
 
   return {
     ...parsedResult,
@@ -94,4 +107,18 @@ function parseAIResponse(text: string) {
     console.error("Failed to parse submerged AI response:", text);
     throw new Error("Alignment failed: The stars returned malformed data.");
   }
+}
+
+/**
+ * Ensures technical specifics are hidden for non-pro users.
+ * Replaces direct "How-to" with "Strategic Allusions".
+ */
+function scrubProprietaryInfo(markdown: string): string {
+  // Simple regex-based scrubbing for common technical 'how-tos'
+  // In a real scenario, this would be a second AI pass
+  return markdown
+    .replace(/Change your (h1|h2|h3|title|meta) to "(.*?)"/gi, "Your $1 requires specific linguistic realignment [Gated]")
+    .replace(/Add a (.*?) tag/gi, "A $1 structural element is missing [Disclosure Required]")
+    .replace(/Fix your (.*?) by (.*?)\./gi, "Your $1 is misaligned; the fix is available in the Vault.")
+    .replace(/You should (.*?) to improve (.*?)/gi, "Strategic $2 improvement is alluded to in the Vault.");
 }

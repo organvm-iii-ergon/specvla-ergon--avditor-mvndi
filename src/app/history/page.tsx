@@ -176,27 +176,28 @@ export default function HistoryPage() {
                       key={audit.id}
                       className="card history-card"
                       style={{
-                        padding: "1.5rem",
+                        padding: "1.25rem",
                         marginBottom: hasMultiple ? "0.5rem" : 0,
                         borderColor: isSelected ? "var(--secondary)" : undefined,
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-                        <div>
-                          <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--secondary)" }}>{audit.link}</h3>
-                          <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: "0 0 0.25rem 0", color: "var(--secondary)", fontSize: "1.1rem", wordBreak: "break-all" }}>{audit.link}</h3>
+                          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
                             {audit.businessType} &bull; {new Date(audit.createdAt!).toLocaleDateString()}
                           </p>
                         </div>
-                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                        <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
                           {hasMultiple && (
                             <button
                               onClick={() => handleCompareToggle(link, audit)}
                               className="btn"
                               style={{
-                                padding: "0.5rem 1rem",
-                                width: "auto",
-                                fontSize: "0.85rem",
+                                flex: 1,
+                                padding: "0.5rem",
+                                fontSize: "0.8rem",
+                                minHeight: "44px",
                                 background: isSelected ? "var(--secondary)" : "transparent",
                                 border: "1px solid var(--secondary)",
                                 color: isSelected ? "#fff" : "var(--secondary)",
@@ -209,7 +210,7 @@ export default function HistoryPage() {
                             href="/results"
                             onClick={() => loadAudit(audit)}
                             className="btn"
-                            style={{ padding: "0.75rem 1.5rem", width: "auto" }}
+                            style={{ flex: 2, padding: "0.5rem", fontSize: "0.85rem", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}
                           >
                             View Audit
                           </Link>

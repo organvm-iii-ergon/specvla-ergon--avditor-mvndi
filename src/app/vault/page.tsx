@@ -61,22 +61,22 @@ export default function VaultPage() {
       </div>
 
       <div className="container" style={{ maxWidth: "1000px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", gap: "2rem", marginBottom: "6rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem", marginBottom: "4rem" }}>
           {RESOURCES.map((res) => (
-            <div key={res.title} className="card" style={{ padding: "2.5rem" }}>
-              <div style={{ fontSize: "0.8rem", color: "var(--primary)", fontWeight: 700, marginBottom: "0.5rem", textTransform: "uppercase" }}>
+            <div key={res.title} className="card" style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: 800, marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 {res.pillar}
               </div>
-              <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>{res.title}</h2>
-              <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>{res.description}</p>
+              <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>{res.title}</h2>
+              <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>{res.description}</p>
               
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "8px", borderLeft: "4px solid var(--primary)" }}>
-                <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "0.9rem", color: "#ddd" }}>
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "1rem", borderRadius: "8px", borderLeft: "4px solid var(--primary)", flex: 1 }}>
+                <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "#ddd" }}>
                   {res.content}
                 </pre>
               </div>
               
-              <button className="btn btn-secondary" style={{ marginTop: "2rem", width: "auto" }}>Download Template</button>
+              <button className="btn btn-secondary" style={{ marginTop: "1.5rem", width: "100%" }}>Download Template</button>
             </div>
           ))}
         </div>

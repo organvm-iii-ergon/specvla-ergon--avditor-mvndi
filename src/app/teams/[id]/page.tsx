@@ -92,8 +92,8 @@ export default function TeamDetailsPage({ params }: { params: { id: string } }) 
         )}
 
         <div className="card" style={{ marginBottom: "3rem" }}>
-          <h2 style={{ marginBottom: "1.5rem" }}>Invite Member</h2>
-          <form onSubmit={handleInvite} style={{ display: "flex", gap: "1rem" }}>
+          <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>Invite Member</h2>
+          <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <input
               className="input"
               type="email"
@@ -101,20 +101,21 @@ export default function TeamDetailsPage({ params }: { params: { id: string } }) 
               placeholder="colleague@example.com"
               value={newMemberEmail}
               onChange={(e) => setNewMemberEmail(e.target.value)}
-              style={{ flex: 1 }}
             />
-            <select
-              className="input"
-              value={newMemberRole}
-              onChange={(e) => setNewMemberRole(e.target.value as "admin" | "member")}
-              style={{ width: "auto" }}
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button className="btn" type="submit" disabled={inviting} style={{ whiteSpace: "nowrap" }}>
-              {inviting ? "Inviting..." : "Add to Team"}
-            </button>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <select
+                className="input"
+                value={newMemberRole}
+                onChange={(e) => setNewMemberRole(e.target.value as "admin" | "member")}
+                style={{ flex: 1 }}
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button className="btn" type="submit" disabled={inviting} style={{ flex: 2, whiteSpace: "nowrap" }}>
+                {inviting ? "Inviting..." : "Add"}
+              </button>
+            </div>
           </form>
         </div>
 

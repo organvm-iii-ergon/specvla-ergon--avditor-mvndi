@@ -84,8 +84,8 @@ export default function TeamsPage() {
         )}
 
         <div className="card" style={{ marginBottom: "3rem" }}>
-          <h2 style={{ marginBottom: "1.5rem" }}>Create New Team</h2>
-          <form onSubmit={handleCreateTeam} style={{ display: "flex", gap: "1rem" }}>
+          <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>Create New Team</h2>
+          <form onSubmit={handleCreateTeam} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <input
               className="input"
               type="text"
@@ -93,9 +93,8 @@ export default function TeamsPage() {
               placeholder="Team Name (e.g. Acme Agency)"
               value={newTeamName}
               onChange={(e) => setNewTeamName(e.target.value)}
-              style={{ flex: 1 }}
             />
-            <button className="btn" type="submit" disabled={creating} style={{ whiteSpace: "nowrap" }}>
+            <button className="btn" type="submit" disabled={creating} style={{ width: "100%" }}>
               {creating ? "Creating..." : "Manifest Team"}
             </button>
           </form>

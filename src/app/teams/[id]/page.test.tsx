@@ -41,7 +41,7 @@ describe("TeamDetailsPage", () => {
     
     // Wait for loading to finish
     const input = await screen.findByPlaceholderText(/colleague@example.com/i);
-    const button = screen.getByText(/Add to Team/i);
+    const button = screen.getByText(/^Add$/i);
 
     fireEvent.change(input, { target: { value: "new@test.com" } });
     fireEvent.click(button);

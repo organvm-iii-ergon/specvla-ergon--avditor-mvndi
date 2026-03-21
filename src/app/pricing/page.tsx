@@ -82,13 +82,12 @@ export default function PricingPage() {
         <p>Choose the path that aligns with your digital manifestation goals.</p>
       </div>
 
-      <div className="container" style={{ maxWidth: "1000px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem", marginBottom: "6rem" }}>
+      <div className="container" style={{ maxWidth: "1000px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "4rem" }}>
         {PLANS.map((plan) => (
           <div 
             key={plan.id} 
             className="card" 
             style={{ 
-              padding: "3rem", 
               display: "flex", 
               flexDirection: "column",
               borderColor: plan.highlight ? "var(--primary)" : "rgba(255,255,255,0.1)",
@@ -97,20 +96,20 @@ export default function PricingPage() {
             }}
           >
             {plan.highlight && (
-              <div style={{ position: "absolute", top: "-15px", left: "50%", transform: "translateX(-50%)", backgroundColor: "var(--primary)", color: "#000", padding: "0.25rem 1rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: 700 }}>
+              <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", backgroundColor: "var(--primary)", color: "#000", padding: "0.25rem 0.75rem", borderRadius: "20px", fontSize: "0.7rem", fontWeight: 800, whiteSpace: "nowrap" }}>
                 MOST POPULAR
               </div>
             )}
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>{plan.name}</h2>
-            <div style={{ fontSize: "3rem", fontWeight: 800, marginBottom: "1rem" }}>
-              {plan.price}<span style={{ fontSize: "1rem", fontWeight: 400, color: "var(--text-muted)" }}>{plan.interval}</span>
+            <h2 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>{plan.name}</h2>
+            <div style={{ fontSize: "2.5rem", fontWeight: 800, marginBottom: "1rem" }}>
+              {plan.price}<span style={{ fontSize: "0.9rem", fontWeight: 400, color: "var(--text-muted)" }}>{plan.interval}</span>
             </div>
-            <p style={{ color: "var(--text-muted)", marginBottom: "2rem", minHeight: "3rem" }}>{plan.description}</p>
+            <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", minHeight: "2.5rem", fontSize: "0.9rem" }}>{plan.description}</p>
             
-            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 3rem 0", flex: 1 }}>
+            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem 0", flex: 1 }}>
               {plan.features.map((feature) => (
-                <li key={feature} style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.95rem" }}>
-                  <span style={{ color: "var(--primary)" }}>✓</span> {feature}
+                <li key={feature} style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
+                  <span style={{ color: "var(--primary)", minWidth: "1.25rem" }}>✓</span> {feature}
                 </li>
               ))}
             </ul>

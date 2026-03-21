@@ -227,30 +227,30 @@ export default function SchedulesPage() {
         ) : (
           <div style={{ display: "grid", gap: "1.5rem" }}>
             {schedules.map((s) => (
-              <div key={s.id} className="card" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.25rem" }}>{s.link}</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+              <div key={s.id} className="card" style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.25rem", wordBreak: "break-all" }}>{s.link}</div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
                     {s.businessType} • {s.frequency.charAt(0).toUpperCase() + s.frequency.slice(1)}
-                    {s.teamId && teams.find(t => t.id === s.teamId) && ` • Collective: ${teams.find(t => t.id === s.teamId)?.name}`}
+                    {s.teamId && teams.find(t => t.id === s.teamId) && ` • ${teams.find(t => t.id === s.teamId)?.name}`}
                   </div>
                   {s.lastRunAt && (
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
                       Last run: {new Date(s.lastRunAt).toLocaleDateString()}
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: "0.75rem" }}>
                   <button
                     className={`btn ${s.enabled ? "btn-secondary" : ""}`}
-                    style={{ padding: "0.5rem 1rem", fontSize: "0.8rem" }}
+                    style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem", minHeight: "44px" }}
                     onClick={() => handleToggleEnabled(s.id, s.enabled)}
                   >
                     {s.enabled ? "Enabled" : "Disabled"}
                   </button>
                   <button
                     className="btn"
-                    style={{ padding: "0.5rem 1rem", fontSize: "0.8rem", backgroundColor: "transparent", color: "var(--accent)", border: "1px solid var(--accent)" }}
+                    style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem", minHeight: "44px", backgroundColor: "transparent", color: "var(--accent)", border: "1px solid var(--accent)" }}
                     onClick={() => handleDeleteSchedule(s.id)}
                   >
                     Delete

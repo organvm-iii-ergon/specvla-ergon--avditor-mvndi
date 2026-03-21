@@ -314,26 +314,26 @@ export default function ResultsPage() {
         
         <div ref={reportRef} style={{ background: "var(--background)", padding: "1px" }}>
           {scores && (
-            <div className="card" style={{ maxWidth: "none", marginBottom: "2rem", padding: "2rem" }}>
-              <h2 style={{ textAlign: "center", marginBottom: "1rem", color: "var(--secondary)" }}>Planetary Alignment Score</h2>
+            <div className="card" style={{ maxWidth: "none", marginBottom: "1.5rem", padding: "1.5rem" }}>
+              <h2 style={{ textAlign: "center", marginBottom: "1rem", color: "var(--secondary)", fontSize: "1.25rem" }}>Planetary Alignment Score</h2>
               <CosmicChart scores={scores} />
             </div>
           )}
 
           <EmailGate auditId={auditId}>
-            <div className="card" style={{ maxWidth: "none", marginBottom: "2rem", padding: "4rem" }}>
+            <div className="card" style={{ maxWidth: "none", marginBottom: "1.5rem", padding: "2rem 1rem" }}>
               <div className="audit-content">
                 <ReactMarkdown>{audit}</ReactMarkdown>
               </div>
               
-              <div style={{ marginTop: "4rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
-                <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+              <div style={{ marginTop: "3rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
                   {feedbackSent ? "Thank you for aligning our data! ✦" : "Was this cosmic alignment helpful?"}
                 </p>
                 {!feedbackSent && (
-                  <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem" }}>
-                    <button onClick={() => handleFeedback(1)} className="btn-secondary" style={{ padding: "0.5rem 1rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)" }}>👍</button>
-                    <button onClick={() => handleFeedback(0)} className="btn-secondary" style={{ padding: "0.5rem 1rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)" }}>👎</button>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
+                    <button onClick={() => handleFeedback(1)} className="btn-secondary" style={{ padding: "0.5rem 1.25rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px" }}>👍</button>
+                    <button onClick={() => handleFeedback(0)} className="btn-secondary" style={{ padding: "0.5rem 1.25rem", fontSize: "1.2rem", background: "rgba(255,255,255,0.05)", minHeight: "44px" }}>👎</button>
                   </div>
                 )}
               </div>
@@ -343,9 +343,9 @@ export default function ResultsPage() {
 
         <ChatBox auditContext={audit} />
 
-        <div className="upsell-section" style={{ textAlign: "center", marginBottom: "6rem" }}>
-          <h2 style={{ marginBottom: "3rem", fontSize: "2.5rem", letterSpacing: "-0.04em" }}>Ready to Manifest?</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "2rem" }}>
+        <div className="upsell-section" style={{ textAlign: "center", marginBottom: "4rem" }}>
+          <h2 style={{ marginBottom: "2rem", fontSize: "2rem", letterSpacing: "-0.04em" }}>Ready to Manifest?</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
             <UpsellCard 
               pathNumber={1} 
               title="Done For You" 
@@ -371,26 +371,38 @@ export default function ResultsPage() {
 
       <style jsx global>{`
         .audit-content h1, .audit-content h2, .audit-content h3 {
-          margin-top: 3rem;
-          margin-bottom: 1.5rem;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
           color: #fff;
           letter-spacing: -0.02em;
+        }
+        @media (min-width: 769px) {
+          .audit-content h1, .audit-content h2, .audit-content h3 {
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+          }
         }
         .audit-content h1:first-child, .audit-content h2:first-child {
           margin-top: 0;
         }
         .audit-content p {
-          margin-bottom: 1.5rem;
-          line-height: 1.7;
+          margin-bottom: 1.25rem;
+          line-height: 1.6;
           color: var(--foreground);
-          font-size: 1.1rem;
+          font-size: 1rem;
+        }
+        @media (min-width: 769px) {
+          .audit-content p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+          }
         }
         .audit-content ul, .audit-content ol {
-          margin-bottom: 2rem;
-          padding-left: 1.5rem;
+          margin-bottom: 1.5rem;
+          padding-left: 1.25rem;
         }
         .audit-content li {
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.5rem;
           color: var(--text-muted);
         }
         .audit-content strong {

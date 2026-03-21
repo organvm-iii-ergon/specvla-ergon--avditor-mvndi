@@ -14,7 +14,7 @@ Production URL: https://growth-auditor.vercel.app
 npm run dev              # Start dev server (Next.js 16 + Turbopack)
 npm run build            # Production build
 npm run lint             # ESLint (config at .config/eslint.config.mjs)
-npm test                 # Vitest unit tests (226 tests, config at .config/vitest.config.ts)
+npm test                 # Vitest unit tests (346 tests, config at .config/vitest.config.ts)
 npm run test:watch       # Vitest in watch mode
 npm run test:e2e         # Playwright E2E tests (config at .config/playwright.config.ts)
 npx tsc --noEmit         # Type check without emitting

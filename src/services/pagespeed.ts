@@ -1,3 +1,5 @@
+import { validateExternalUrl } from '@/lib/url-validator';
+
 export interface PageSpeedResult {
   performanceScore: number;
   seoScore: number;
@@ -8,7 +10,7 @@ export interface PageSpeedResult {
 
 export async function getPageSpeedInsights(url: string): Promise<PageSpeedResult | null> {
   try {
-    const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
+    const formattedUrl = validateExternalUrl(url);
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(formattedUrl)}&category=performance&category=seo&category=accessibility&category=best-practices`;
     
     // Fetch with a timeout to avoid hanging the audit forever

@@ -38,7 +38,7 @@ describe("scraper service", () => {
 
     const result = await scrapeWebsite("test.com");
     
-    expect(result).toContain("--- PAGE: https://test.com ---");
+    expect(result).toContain("--- PAGE: https://test.com/ ---");
     expect(result).toContain("Test Title");
     expect(result).toContain("Test description");
     expect(result).toContain("Main Heading");
@@ -65,7 +65,7 @@ describe("scraper service", () => {
     await scrapeWebsite("test.com");
     
     expect(global.fetch).toHaveBeenCalledWith(
-      "https://test.com",
+      "https://test.com/",
       expect.any(Object)
     );
   });

@@ -4,6 +4,10 @@ vi.mock("@/lib/config", () => ({
   getConfig: vi.fn(),
 }));
 
+vi.mock("@/lib/db", () => ({
+  getIntegrations: vi.fn().mockResolvedValue([]),
+}));
+
 import { getConfig } from "@/lib/config";
 import { sendWebhook, sendAuditWebhook, sendLeadWebhook } from "./webhook";
 

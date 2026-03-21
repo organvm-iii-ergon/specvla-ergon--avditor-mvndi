@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAudits, saveAudit, getScheduledAudits, updateScheduledAudit, getSubscription, getTeamMembers } from "@/lib/db";
+import { saveAudit, getScheduledAudits, updateScheduledAudit, getSubscription, getTeamMembers } from "@/lib/db";
 import { orchestrateCosmicAudit } from "@/services/aiOrchestrator";
 import { Resend } from "resend";
 import crypto from "crypto";
@@ -125,25 +125,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, processedSchedules: processed });
     }
 
-    // Fallback path
-    const allAudits = await getAudits();
-    const uniqueUserAudits = new Map<string, (typeof allAudits)[0]>();
-    for (const audit of allAudits) {
-      if (audit.userEmail && !uniqueUserAudits.has(audit.userEmail)) {
-        uniqueUserAudits.set(audit.userEmail, audit);
-      }
-    }
-
-    for (const [, audit] of uniqueUserAudits) {
-      try {
-        await generateMonthlyAudit(audit.link, audit.businessType, audit.goals, audit.userEmail!);
-        processed++;
-      } catch (e) {
-        console.error(`Failed fallback audit ${audit.userEmail}:`, e);
-      }
-    }
-
-    return NextResponse.json({ success: true, processedUsers: processed, fallback: true });
+    return NextResponse.json({ success: true, processedSchedules: processed });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

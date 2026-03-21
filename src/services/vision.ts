@@ -1,9 +1,10 @@
 import puppeteer from 'puppeteer';
+import { validateExternalUrl } from '@/lib/url-validator';
 
 export async function captureScreenshot(url: string): Promise<string | null> {
   let browser;
   try {
-    const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
+    const formattedUrl = validateExternalUrl(url);
     
     // Launch headless browser
     browser = await puppeteer.launch({

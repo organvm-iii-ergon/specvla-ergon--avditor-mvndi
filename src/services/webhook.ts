@@ -1,5 +1,10 @@
+import crypto from 'crypto';
 import { getConfig } from "@/lib/config";
 import { getIntegrations } from "@/lib/db";
+
+function signPayload(payload: string, secret: string): string { // allow-secret
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
 
 export interface WebhookPayload {
   event: "audit.completed" | "lead.captured" | "comparison.completed";
@@ -13,14 +18,20 @@ export async function sendWebhook(payload: WebhookPayload, userEmail?: string): 
 
   if (primaryWebhookUrl) {
     try {
+      const webhookSecret = getConfig("webhookSecret");
+      const body = JSON.stringify(payload);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "User-Agent": "GrowthAuditor/1.0",
+        "X-Webhook-Event": payload.event,
+      };
+      if (webhookSecret) {
+        headers["X-Webhook-Signature"] = signPayload(body, webhookSecret);
+      }
       const response = await fetch(primaryWebhookUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "GrowthAuditor/1.0",
-          "X-Webhook-Event": payload.event,
-        },
-        body: JSON.stringify(payload),
+        headers,
+        body,
         signal: AbortSignal.timeout(10000),
       });
       primarySuccess = response.ok;

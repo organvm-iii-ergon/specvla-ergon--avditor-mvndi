@@ -43,7 +43,7 @@ describe("captureScreenshot", () => {
 
     const result = await captureScreenshot("example.com");
 
-    expect(mockGoto).toHaveBeenCalledWith("https://example.com", {
+    expect(mockGoto).toHaveBeenCalledWith("https://example.com/", {
       waitUntil: "networkidle2",
       timeout: 15000,
     });

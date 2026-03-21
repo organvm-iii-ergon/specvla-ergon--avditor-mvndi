@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getAudits, saveAudit } from "@/lib/db";
-import { scrapeWebsite } from "@/services/scraper";
-import { getCosmicAuditPrompt } from "@/services/promptTemplates";
-import { captureScreenshot } from "@/services/vision";
-import { getPageSpeedInsights } from "@/services/pagespeed";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { orchestrateCosmicAudit } from "@/services/aiOrchestrator";
 import crypto from "crypto";
 
 async function generateAudit(
@@ -14,59 +10,24 @@ async function generateAudit(
   goals: string,
   userEmail?: string
 ): Promise<{ id: string; markdownAudit: string; scores: Record<string, number> }> {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
-    throw new Error("GEMINI_API_KEY not configured");
-  }
+  const apiKey = process.env.GEMINI_API_KEY; // allow-secret
+  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
-  const [scrapedContent, screenshotBase64, seoData] = await Promise.all([
-    scrapeWebsite(link).catch(() => ""),
-    captureScreenshot(link).catch(() => null),
-    getPageSpeedInsights(link).catch(() => null),
-  ]);
-
-  const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-  const prompt = getCosmicAuditPrompt(link, businessType, goals, scrapedContent, seoData);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const parts: any[] = [{ text: prompt }];
-  if (screenshotBase64) {
-    parts.push({
-      inlineData: {
-        data: screenshotBase64,
-        mimeType: "image/jpeg",
-      },
-    });
-  }
-
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts }],
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
+  const result = await orchestrateCosmicAudit({
+    link, businessType, goals,
+    provider: "gemini",
+    auth: apiKey,
+    isPro: true, // admin-triggered audits get full depth
   });
-
-  const text = (await result.response).text();
-  const parsedResult = JSON.parse(text);
 
   const auditId = crypto.randomUUID();
   await saveAudit({
-    id: auditId,
-    userEmail,
-    link,
-    businessType,
-    goals,
-    markdownAudit: parsedResult.markdownAudit,
-    scores: JSON.stringify(parsedResult.scores || {}),
+    id: auditId, userEmail, link, businessType, goals,
+    markdownAudit: result.markdownAudit,
+    scores: JSON.stringify(result.scores || {}),
   });
 
-  return {
-    id: auditId,
-    markdownAudit: parsedResult.markdownAudit,
-    scores: parsedResult.scores || {},
-  };
+  return { id: auditId, markdownAudit: result.markdownAudit, scores: result.scores || {} };
 }
 
 export async function POST(req: Request) {

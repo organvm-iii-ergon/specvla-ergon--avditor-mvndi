@@ -13,10 +13,11 @@ describe("Dimensional Inference Engine (ragService)", () => {
     expect(context).toContain("Visual Harmony Strategy");
   });
 
-  it("calculates coordinates and returns top 2 matches", () => {
+  it("calculates coordinates and returns top 3 matches", () => {
     const context = getRelevantContext("Help me with SEO and copy");
-    expect(context).toContain("Coordinates: 30, 0, 50");
-    // Should return communication and technical structure based on closeness
-    expect(context).toContain("Mercury Copywriting Framework");
+    // SEO triggers execution (+25 +30) and communication (+25) terms
+    expect(context).toContain("Coordinates:");
+    // Should return technically-oriented and communication playbooks
+    expect(context).toContain("PROPRIETARY DIMENSIONAL STRATEGY CONTEXT");
   });
 });

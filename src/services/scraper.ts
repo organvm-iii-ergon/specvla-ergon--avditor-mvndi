@@ -1,8 +1,9 @@
 import * as cheerio from 'cheerio';
+import { validateExternalUrl } from '@/lib/url-validator';
 
 export async function scrapeWebsite(url: string, maxPages: number = 1): Promise<string> {
   const visited = new Set<string>();
-  const toVisit = [url.startsWith('http') ? url : `https://${url}`];
+  const toVisit = [validateExternalUrl(url)];
   let fullContent = "";
 
   while (toVisit.length > 0 && visited.size < maxPages) {

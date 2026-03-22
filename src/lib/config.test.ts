@@ -1,85 +1,48 @@
-import { describe, it, expect } from "vitest";
-import { getConfig, setConfig, getAllConfig, deleteConfig } from "./config";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { getConfig, getAllConfig, setConfig, deleteConfig } from "./config";
 
 describe("config lib", () => {
-  it("returns null for non-existent key", () => {
-    const result = getConfig("totally_nonexistent_key_xyz_999");
-    expect(result).toBeNull();
+  beforeEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  it("stores a value with setConfig that getConfig can retrieve", () => {
-    const key = `test_key_${Date.now()}`;
-    const value = "test_value_42";
-
-    setConfig(key, value);
-    const result = getConfig(key);
-    expect(result).toBe(value);
-
-    // Clean up
-    deleteConfig(key);
+  it("returns default value for known key", () => {
+    expect(getConfig("appName")).toBe("Growth Auditor");
   });
 
-  it("overwrites an existing value with setConfig", () => {
-    const key = `test_overwrite_${Date.now()}`;
-
-    setConfig(key, "first");
-    expect(getConfig(key)).toBe("first");
-
-    setConfig(key, "second");
-    expect(getConfig(key)).toBe("second");
-
-    // Clean up
-    deleteConfig(key);
+  it("returns null for unknown key", () => {
+    expect(getConfig("nonexistentKey")).toBeNull();
   });
 
-  it("returns all config entries as a key-value object via getAllConfig", () => {
-    const all = getAllConfig();
-
-    expect(typeof all).toBe("object");
-    expect(all).not.toBeNull();
-    // Default seeds should be present
-    expect(all).toHaveProperty("authPassword");
-    expect(all).toHaveProperty("appName");
-    expect(all).toHaveProperty("baseUrl");
+  it("returns default admin email", () => {
+    expect(getConfig("adminEmails")).toBe("admin@growthauditor.ai");
   });
 
-  it("deleteConfig removes a key", () => {
-    const key = `test_delete_${Date.now()}`;
-    setConfig(key, "to_be_deleted");
-    expect(getConfig(key)).toBe("to_be_deleted");
-
-    deleteConfig(key);
-    expect(getConfig(key)).toBeNull();
+  it("prefers environment variable over default", () => {
+    vi.stubEnv("ADMIN_EMAILS", "custom@example.com");
+    expect(getConfig("adminEmails")).toBe("custom@example.com");
   });
 
-  it("deleteConfig on non-existent key does not throw", () => {
-    expect(() => deleteConfig("nonexistent_key_for_delete_test")).not.toThrow();
+  it("getAllConfig returns all defaults", () => {
+    const config = getAllConfig();
+    expect(config.appName).toBe("Growth Auditor");
+    expect(config.primaryColor).toBe("#7000ff");
+    expect(config.accentColor).toBe("#00d4ff");
   });
 
-  it("seeds default config values", () => {
-    const all = getAllConfig();
-
-    expect(all.authPassword).toBe("cosmic");
-    expect(all.posthogHost).toBe("https://us.i.posthog.com");
-    expect(all.adminEmails).toBe("admin@growthauditor.ai");
-    expect(all.enableSubscriptions).toBe("false");
-    expect(all.enableMonthlyAudits).toBe("true");
-    expect(all.emailFrom).toBe("hello@growthauditor.ai");
-    expect(all.appName).toBe("Growth Auditor");
-    expect(all.appTagline).toBe("Cosmic Strategy & Digital Alignment");
-    expect(all.primaryColor).toBe("#7000ff");
-    expect(all.accentColor).toBe("#00d4ff");
-    expect(all.baseUrl).toBe("http://localhost:3000");
+  it("getAllConfig includes env var overrides", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_NAME", "My Custom App");
+    const config = getAllConfig();
+    expect(config.appName).toBe("My Custom App");
   });
 
-  it("getAllConfig includes dynamically added keys", () => {
-    const key = `test_dynamic_${Date.now()}`;
-    setConfig(key, "dynamic_value");
+  it("setConfig is a no-op in env-var mode", () => {
+    setConfig("appName", "New Name");
+    expect(getConfig("appName")).toBe("Growth Auditor");
+  });
 
-    const all = getAllConfig();
-    expect(all[key]).toBe("dynamic_value");
-
-    // Clean up
-    deleteConfig(key);
+  it("deleteConfig is a no-op in env-var mode", () => {
+    deleteConfig("appName");
+    expect(getConfig("appName")).toBe("Growth Auditor");
   });
 });

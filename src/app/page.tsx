@@ -10,15 +10,15 @@ import TransparentIcon from "@/components/TransparentIcon";
 import { IconType } from "@/components/CosmicIcons";
 import type { TeamRecord } from "@/lib/db";
 
-const PILLARS: { name: string; icon: IconType; desc: string; color: string }[] = [
-  { name: "Sun", icon: "sun", desc: "Identity", color: "#ffa726" },
-  { name: "Moon", icon: "moon", desc: "Psychology", color: "#b0bec5" },
-  { name: "Mercury", icon: "mercury", desc: "Communication", color: "#9b6dff" },
-  { name: "Venus", icon: "venus", desc: "Aesthetic", color: "#00d4ff" },
-  { name: "Mars", icon: "mars", desc: "Drive", color: "#ff3080" },
-  { name: "Jupiter", icon: "jupiter", desc: "Reach", color: "#ff6e40" },
-  { name: "Saturn", icon: "saturn", desc: "Structure", color: "#e6b800" },
-  { name: "Neptune", icon: "neptune", desc: "Vision", color: "#448aff" },
+const PILLARS: { name: string; icon: IconType; desc: string; detail: string; color: string }[] = [
+  { name: "Sun", icon: "sun", desc: "Identity", detail: "Brand positioning, unique value proposition, market differentiation. How clearly does your digital presence answer: who are you and why should anyone care?", color: "#ffa726" },
+  { name: "Moon", icon: "moon", desc: "Psychology", detail: "User behavior patterns, emotional triggers, trust architecture. We analyze how your site makes people feel — and whether that feeling drives action.", color: "#b0bec5" },
+  { name: "Mercury", icon: "mercury", desc: "Communication", detail: "Copy clarity, headline impact, messaging hierarchy. Every word on your site either pulls users forward or pushes them away.", color: "#9b6dff" },
+  { name: "Venus", icon: "venus", desc: "Aesthetic", detail: "Visual harmony, color psychology, typography, whitespace. Design isn't decoration — it's the silent language of credibility.", color: "#00d4ff" },
+  { name: "Mars", icon: "mars", desc: "Drive", detail: "CTA placement, conversion friction, action density. Mars measures whether your site moves people from browsing to buying.", color: "#ff3080" },
+  { name: "Jupiter", icon: "jupiter", desc: "Reach", detail: "Audience growth, content distribution, social proof density. How far does your gravitational pull extend beyond your own domain?", color: "#ff6e40" },
+  { name: "Saturn", icon: "saturn", desc: "Structure", detail: "Technical SEO, page speed, schema markup, heading hierarchy. The invisible architecture that search engines use to rank you.", color: "#e6b800" },
+  { name: "Neptune", icon: "neptune", desc: "Vision", detail: "Storytelling coherence, content strategy, narrative arc. Neptune reads the story your brand tells across every touchpoint.", color: "#448aff" },
 ];
 
 function getMoonPhase() {
@@ -44,6 +44,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [teams, setTeams] = useState<TeamRecord[]>([]);
+  const [activePillar, setActivePillar] = useState<string | null>(null);
   const { data: session } = useSession();
 
   const planetaryWindow = typeof window !== "undefined" ? getMoonPhase() : "";
@@ -93,27 +94,57 @@ export default function HomePage() {
           gap: "0.75rem",
           marginBottom: "1.5rem"
         }}>
-          {PILLARS.map(p => (
-            <div key={p.name} className="card" style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "0.6rem",
-              padding: "1.5rem 0.75rem",
-              textAlign: "center",
-              borderColor: `${p.color}18`,
-              borderRadius: "16px",
-              transition: "border-color 0.3s, transform 0.3s",
-            }}>
-              {/* Hollow icon — stroke only, background bleeds through */}
-              <div style={{ width: "44px", height: "44px", opacity: 0.85 }}>
-                <TransparentIcon type={p.icon} size="100%" />
-              </div>
-              <div style={{ fontWeight: 800, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.2em", color: p.color }}>{p.name}</div>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", opacity: 0.6, lineHeight: 1.4 }}>{p.desc}</div>
-            </div>
-          ))}
+          {PILLARS.map(p => {
+            const isActive = activePillar === p.name;
+            return (
+              <button
+                key={p.name}
+                onClick={() => setActivePillar(isActive ? null : p.name)}
+                className="card"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "1.25rem 0.5rem",
+                  textAlign: "center",
+                  borderColor: isActive ? `${p.color}60` : `${p.color}15`,
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  transition: "all 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
+                  background: isActive ? `${p.color}10` : undefined,
+                }}
+              >
+                <div style={{ width: "36px", height: "36px", opacity: isActive ? 1 : 0.75, transition: "opacity 0.3s" }}>
+                  <TransparentIcon type={p.icon} size="100%" />
+                </div>
+                <div style={{ fontWeight: 800, fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.2em", color: p.color }}>{p.name}</div>
+                <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", opacity: 0.5 }}>{p.desc}</div>
+              </button>
+            );
+          })}
         </div>
+
+        {/* PILLAR DETAIL — expands below grid when clicked */}
+        {activePillar && (() => {
+          const p = PILLARS.find(x => x.name === activePillar)!;
+          return (
+            <div className="card" style={{
+              marginBottom: "1.5rem",
+              padding: "1.25rem 1.5rem",
+              borderRadius: "14px",
+              borderLeft: `3px solid ${p.color}`,
+              animation: "fadeIn 0.3s ease-out",
+              textAlign: "left",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                <div style={{ width: "24px", height: "24px" }}><TransparentIcon type={p.icon} size="100%" /></div>
+                <span style={{ fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.15em", color: p.color }}>{p.name} — {p.desc}</span>
+              </div>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>{p.detail}</p>
+            </div>
+          );
+        })()}
 
         {/* CTA / FORM */}
         {!showForm ? (

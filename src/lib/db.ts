@@ -49,6 +49,10 @@ export interface LeadRecord {
   createdAt?: string;
 }
 
+// ──────────────────────────────────────────────
+// Database backends
+// ──────────────────────────────────────────────
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const useSupabase = !!(supabaseUrl && supabaseKey);
@@ -58,12 +62,19 @@ if (useSupabase) {
   supabase = createClient(supabaseUrl, supabaseKey);
 }
 
-// SQLite accessor — dynamic import so better-sqlite3 is NEVER in the SSR bundle
-async function sqlite() {
-  if (useSupabase) return null;
-  const { getDb } = await import("./db-sqlite");
-  return getDb();
-}
+// In-memory fallback for local dev without Supabase.
+// Data persists only for the lifetime of the dev server process.
+const mem = {
+  audits: new Map<string, AuditRecord>(),
+  teams: new Map<string, TeamRecord>(),
+  members: new Map<string, TeamMemberRecord>(),
+  leads: new Map<string, LeadRecord>(),
+  schedules: new Map<string, ScheduledAuditRecord>(),
+  subscriptions: new Map<string, { userEmail: string; plan: string; status: string; customLogoUrl?: string }>(),
+  feedback: new Map<string, Record<string, unknown>>(),
+  integrations: new Map<string, { id: string; userEmail: string; name: string; url: string; event: string; createdAt: string }>(),
+  apiTokens: new Map<string, { id: string; userEmail: string; name: string; token: string }>(), // allow-secret
+};
 
 // ──────────────────────────────────────────────
 // API Tokens
@@ -75,18 +86,16 @@ export async function saveApiToken(email: string, name: string, token: string) {
     const { error } = await supabase.from("api_tokens").insert([{ id, userEmail: email, name, token }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO api_tokens (id, userEmail, name, token) VALUES (?, ?, ?, ?)").run(id, email, name, token);
+    mem.apiTokens.set(id, { id, userEmail: email, name, token });
   }
 }
 
 export async function getApiTokens(email: string) {
   if (supabase) {
     const { data } = await supabase.from("api_tokens").select("*").eq("userEmail", email);
-    return data;
+    return data ?? [];
   }
-  const db = await sqlite();
-  return db?.prepare("SELECT * FROM api_tokens WHERE userEmail = ?").all(email) ?? [];
+  return [...mem.apiTokens.values()].filter(t => t.userEmail === email);
 }
 
 export async function getUserByToken(token: string) { // allow-secret
@@ -94,9 +103,8 @@ export async function getUserByToken(token: string) { // allow-secret
     const { data } = await supabase.from("api_tokens").select("userEmail").eq("token", token).single();
     return data?.userEmail;
   }
-  const db = await sqlite();
-  const row = db?.prepare("SELECT userEmail FROM api_tokens WHERE token = ?").get(token) as { userEmail: string } | undefined; // allow-secret
-  return row?.userEmail;
+  const entry = [...mem.apiTokens.values()].find(t => t.token === token); // allow-secret
+  return entry?.userEmail;
 }
 
 // ──────────────────────────────────────────────
@@ -109,18 +117,16 @@ export async function saveIntegration(email: string, name: string, url: string, 
     const { error } = await supabase.from("integrations").insert([{ id, userEmail: email, name, url, event }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO integrations (id, userEmail, name, url, event) VALUES (?, ?, ?, ?, ?)").run(id, email, name, url, event);
+    mem.integrations.set(id, { id, userEmail: email, name, url, event, createdAt: new Date().toISOString() });
   }
 }
 
 export async function getIntegrations(email: string) {
   if (supabase) {
     const { data } = await supabase.from("integrations").select("*").eq("userEmail", email);
-    return data;
+    return data ?? [];
   }
-  const db = await sqlite();
-  return db?.prepare("SELECT * FROM integrations WHERE userEmail = ?").all(email) ?? [];
+  return [...mem.integrations.values()].filter(i => i.userEmail === email);
 }
 
 export async function deleteIntegration(id: string) {
@@ -128,8 +134,7 @@ export async function deleteIntegration(id: string) {
     const { error } = await supabase.from("integrations").delete().eq("id", id);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("DELETE FROM integrations WHERE id = ?").run(id);
+    mem.integrations.delete(id);
   }
 }
 
@@ -147,13 +152,11 @@ export async function deleteUserData(email: string) {
       supabase.from("api_tokens").delete().eq("userEmail", email),
     ]);
   } else {
-    const db = await sqlite();
-    if (!db) return;
-    db.prepare("DELETE FROM audits WHERE userEmail = ?").run(email);
-    db.prepare("DELETE FROM scheduled_audits WHERE userEmail = ?").run(email);
-    db.prepare("DELETE FROM integrations WHERE userEmail = ?").run(email);
-    db.prepare("DELETE FROM subscriptions WHERE userEmail = ?").run(email);
-    db.prepare("DELETE FROM api_tokens WHERE userEmail = ?").run(email);
+    for (const [k, v] of mem.audits) { if (v.userEmail === email) mem.audits.delete(k); }
+    for (const [k, v] of mem.schedules) { if (v.userEmail === email) mem.schedules.delete(k); }
+    for (const [k, v] of mem.integrations) { if (v.userEmail === email) mem.integrations.delete(k); }
+    for (const [k, v] of mem.subscriptions) { if (v.userEmail === email) mem.subscriptions.delete(k); }
+    for (const [k, v] of mem.apiTokens) { if (v.userEmail === email) mem.apiTokens.delete(k); }
   }
 }
 
@@ -167,10 +170,7 @@ export async function saveFeedback(feedback: { auditId: string; userEmail?: stri
     const { error } = await supabase.from("audit_feedback").insert([{ id, ...feedback }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO audit_feedback (id, auditId, userEmail, section, score, comment) VALUES (?, ?, ?, ?, ?, ?)").run(
-      id, feedback.auditId, feedback.userEmail || null, feedback.section || null, feedback.score, feedback.comment || null
-    );
+    mem.feedback.set(id, { id, ...feedback });
   }
 }
 
@@ -183,8 +183,7 @@ export async function getSubscription(email: string) {
     const { data } = await supabase.from("subscriptions").select("*").eq("userEmail", email).single();
     return data;
   }
-  const db = await sqlite();
-  return db?.prepare("SELECT * FROM subscriptions WHERE userEmail = ?").get(email) ?? null;
+  return mem.subscriptions.get(email) ?? null;
 }
 
 export async function updateSubscription(email: string, plan: string, status: string) {
@@ -192,8 +191,7 @@ export async function updateSubscription(email: string, plan: string, status: st
     const { error } = await supabase.from("subscriptions").upsert([{ userEmail: email, plan, status }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO subscriptions (userEmail, plan, status) VALUES (?, ?, ?) ON CONFLICT(userEmail) DO UPDATE SET plan = excluded.plan, status = excluded.status, updatedAt = CURRENT_TIMESTAMP").run(email, plan, status);
+    mem.subscriptions.set(email, { userEmail: email, plan, status });
   }
 }
 
@@ -202,8 +200,8 @@ export async function updateBranding(email: string, logoUrl: string) {
     const { error } = await supabase.from("subscriptions").update({ customLogoUrl: logoUrl }).eq("userEmail", email);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("UPDATE subscriptions SET customLogoUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE userEmail = ?").run(logoUrl, email);
+    const sub = mem.subscriptions.get(email);
+    if (sub) sub.customLogoUrl = logoUrl;
   }
 }
 
@@ -220,9 +218,7 @@ export async function saveAudit(audit: AuditRecord) {
     }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare(`INSERT INTO audits (id, userEmail, teamId, link, businessType, goals, markdownAudit, scores) VALUES (@id, @userEmail, @teamId, @link, @businessType, @goals, @markdownAudit, @scores)`)
-      .run({ ...audit, userEmail: audit.userEmail || null, teamId: audit.teamId || null });
+    mem.audits.set(audit.id, { ...audit, createdAt: new Date().toISOString() });
   }
 }
 
@@ -235,13 +231,10 @@ export async function getAudits(userEmail?: string, teamId?: string): Promise<Au
     if (error) throw new Error(error.message);
     return data as AuditRecord[];
   }
-  const db = await sqlite();
-  if (!db) return [];
-  if (teamId) return db.prepare("SELECT * FROM audits WHERE teamId = ? ORDER BY createdAt DESC").all(teamId) as AuditRecord[];
-  if (userEmail) {
-    return db.prepare(`SELECT DISTINCT a.* FROM audits a LEFT JOIN team_members tm ON a.teamId = tm.teamId WHERE a.userEmail = ? OR tm.email = ? ORDER BY a.createdAt DESC`).all(userEmail, userEmail) as AuditRecord[];
-  }
-  return db.prepare("SELECT * FROM audits ORDER BY createdAt DESC").all() as AuditRecord[];
+  let results = [...mem.audits.values()];
+  if (userEmail) results = results.filter(a => a.userEmail === userEmail);
+  if (teamId) results = results.filter(a => a.teamId === teamId);
+  return results.reverse();
 }
 
 export async function getAuditById(id: string): Promise<AuditRecord | undefined> {
@@ -250,8 +243,7 @@ export async function getAuditById(id: string): Promise<AuditRecord | undefined>
     if (error) return undefined;
     return data as AuditRecord;
   }
-  const db = await sqlite();
-  return db?.prepare("SELECT * FROM audits WHERE id = ?").get(id) as AuditRecord | undefined;
+  return mem.audits.get(id);
 }
 
 export async function deleteAudit(id: string): Promise<void> {
@@ -259,8 +251,7 @@ export async function deleteAudit(id: string): Promise<void> {
     const { error } = await supabase.from("audits").delete().eq("id", id);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("DELETE FROM audits WHERE id = ?").run(id);
+    mem.audits.delete(id);
   }
 }
 
@@ -275,11 +266,9 @@ export async function createTeam(name: string, ownerEmail: string): Promise<Team
     if (error) throw new Error(error.message);
     await supabase.from("team_members").insert([{ id: crypto.randomUUID(), teamId: id, email: ownerEmail, role: "owner" }]);
   } else {
-    const db = await sqlite();
-    if (db) {
-      db.prepare("INSERT INTO teams (id, name, ownerEmail) VALUES (?, ?, ?)").run(id, name, ownerEmail);
-      db.prepare("INSERT INTO team_members (id, teamId, email, role) VALUES (?, ?, ?, ?)").run(crypto.randomUUID(), id, ownerEmail, "owner");
-    }
+    mem.teams.set(id, { id, name, ownerEmail, createdAt: new Date().toISOString() });
+    const mid = crypto.randomUUID();
+    mem.members.set(mid, { id: mid, teamId: id, email: ownerEmail, role: "owner", createdAt: new Date().toISOString() });
   }
   return { id, name, ownerEmail };
 }
@@ -293,9 +282,8 @@ export async function getTeamsByEmail(email: string): Promise<TeamRecord[]> {
     if (error) throw new Error(error.message);
     return data as TeamRecord[];
   }
-  const db = await sqlite();
-  if (!db) return [];
-  return db.prepare(`SELECT teams.* FROM teams JOIN team_members ON teams.id = team_members.teamId WHERE team_members.email = ?`).all(email) as TeamRecord[];
+  const teamIds = [...mem.members.values()].filter(m => m.email === email).map(m => m.teamId);
+  return [...mem.teams.values()].filter(t => teamIds.includes(t.id));
 }
 
 export async function addTeamMember(teamId: string, email: string, role: "admin" | "member" = "member"): Promise<void> {
@@ -304,8 +292,7 @@ export async function addTeamMember(teamId: string, email: string, role: "admin"
     const { error } = await supabase.from("team_members").insert([{ id, teamId, email, role }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO team_members (id, teamId, email, role) VALUES (?, ?, ?, ?)").run(id, teamId, email, role);
+    mem.members.set(id, { id, teamId, email, role, createdAt: new Date().toISOString() });
   }
 }
 
@@ -315,9 +302,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMemberRecord[]
     if (error) throw new Error(error.message);
     return data as TeamMemberRecord[];
   }
-  const db = await sqlite();
-  if (!db) return [];
-  return db.prepare("SELECT * FROM team_members WHERE teamId = ?").all(teamId) as TeamMemberRecord[];
+  return [...mem.members.values()].filter(m => m.teamId === teamId);
 }
 
 // ──────────────────────────────────────────────
@@ -330,9 +315,7 @@ export async function getLeads(): Promise<LeadRecord[]> {
     if (error) throw new Error(error.message);
     return data as LeadRecord[];
   }
-  const db = await sqlite();
-  if (!db) return [];
-  return db.prepare("SELECT * FROM leads ORDER BY createdAt DESC").all() as LeadRecord[];
+  return [...mem.leads.values()].reverse();
 }
 
 export async function saveLead(email: string, auditId?: string, source: string = "audit_gate"): Promise<void> {
@@ -341,18 +324,13 @@ export async function saveLead(email: string, auditId?: string, source: string =
     const { error } = await supabase.from("leads").insert([{ id, email, auditId, source }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO leads (id, email, auditId, source) VALUES (?, ?, ?, ?)").run(id, email, auditId || null, source);
+    mem.leads.set(id, { id, email, auditId, source, createdAt: new Date().toISOString() });
   }
 }
 
 // ──────────────────────────────────────────────
 // Scheduled Audits
 // ──────────────────────────────────────────────
-
-function sqliteRowToScheduledAudit(row: Record<string, unknown>): ScheduledAuditRecord {
-  return { ...row, enabled: row.enabled === 1 || row.enabled === true } as ScheduledAuditRecord;
-}
 
 export async function getScheduledAudits(userEmail?: string): Promise<ScheduledAuditRecord[]> {
   if (supabase) {
@@ -362,12 +340,9 @@ export async function getScheduledAudits(userEmail?: string): Promise<ScheduledA
     if (error) throw new Error(error.message);
     return data as ScheduledAuditRecord[];
   }
-  const db = await sqlite();
-  if (!db) return [];
-  if (userEmail) {
-    return (db.prepare(`SELECT DISTINCT s.* FROM scheduled_audits s LEFT JOIN team_members tm ON s.teamId = tm.teamId WHERE s.userEmail = ? OR tm.email = ? ORDER BY s.createdAt DESC`).all(userEmail, userEmail) as Record<string, unknown>[]).map(sqliteRowToScheduledAudit);
-  }
-  return (db.prepare("SELECT * FROM scheduled_audits ORDER BY createdAt DESC").all() as Record<string, unknown>[]).map(sqliteRowToScheduledAudit);
+  let results = [...mem.schedules.values()];
+  if (userEmail) results = results.filter(s => s.userEmail === userEmail);
+  return results.reverse();
 }
 
 export async function saveScheduledAudit(record: Omit<ScheduledAuditRecord, "id" | "createdAt">): Promise<string> {
@@ -376,9 +351,7 @@ export async function saveScheduledAudit(record: Omit<ScheduledAuditRecord, "id"
     const { error } = await supabase.from("scheduled_audits").insert([{ id, ...record, teamId: record.teamId || null, lastRunAt: record.lastRunAt || null }]);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("INSERT INTO scheduled_audits (id, userEmail, teamId, link, businessType, goals, frequency, enabled, lastRunAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(id, record.userEmail, record.teamId || null, record.link, record.businessType, record.goals, record.frequency, record.enabled ? 1 : 0, record.lastRunAt || null);
+    mem.schedules.set(id, { id, ...record, createdAt: new Date().toISOString() });
   }
   return id;
 }
@@ -388,18 +361,8 @@ export async function updateScheduledAudit(id: string, updates: Partial<Schedule
     const { error } = await supabase.from("scheduled_audits").update(updates).eq("id", id);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    if (!db) return;
-    const setClauses: string[] = [];
-    const values: unknown[] = [];
-    for (const [key, value] of Object.entries(updates)) {
-      if (key === "id") continue;
-      setClauses.push(`${key} = ?`);
-      values.push(key === "enabled" ? (value ? 1 : 0) : value);
-    }
-    if (setClauses.length === 0) return;
-    values.push(id);
-    db.prepare(`UPDATE scheduled_audits SET ${setClauses.join(", ")} WHERE id = ?`).run(...values);
+    const existing = mem.schedules.get(id);
+    if (existing) mem.schedules.set(id, { ...existing, ...updates });
   }
 }
 
@@ -408,8 +371,7 @@ export async function deleteScheduledAudit(id: string): Promise<void> {
     const { error } = await supabase.from("scheduled_audits").delete().eq("id", id);
     if (error) throw new Error(error.message);
   } else {
-    const db = await sqlite();
-    db?.prepare("DELETE FROM scheduled_audits WHERE id = ?").run(id);
+    mem.schedules.delete(id);
   }
 }
 
@@ -419,7 +381,5 @@ export async function getScheduledAuditById(id: string): Promise<ScheduledAuditR
     if (error) return undefined;
     return data as ScheduledAuditRecord;
   }
-  const db = await sqlite();
-  const row = db?.prepare("SELECT * FROM scheduled_audits WHERE id = ?").get(id) as Record<string, unknown> | undefined;
-  return row ? sqliteRowToScheduledAudit(row) : undefined;
+  return mem.schedules.get(id);
 }

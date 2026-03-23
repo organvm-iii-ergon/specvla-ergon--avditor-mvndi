@@ -1,21 +1,21 @@
-# Growth Auditor AI ✦
+# Specvla Ergon — Avditor Mvndi ✦
 
-[![Status](https://img.shields.io/badge/status-omega-blueviolet?style=for-the-badge)](https://github.com/organvm-iii-ergon/growth-auditor)
+[![Status](https://img.shields.io/badge/status-omega-blueviolet?style=for-the-badge)](https://github.com/organvm-iii-ergon/specvla-ergon--avditor-mvndi)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 
-> **Aligning digital potential with cosmic timing.**  
-> Growth Auditor AI is a production-grade, multi-tenant platform for creators and agencies to perform deep-dive growth audits using advanced AI.
+> **Aligning digital potential with cosmic timing.**
+> Avditor Mvndi is a production-grade, multi-tenant platform for creators and agencies to perform deep-dive growth audits using advanced AI.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Clone & Install
-git clone https://github.com/organvm-iii-ergon/growth-auditor.git
-cd growth-auditor
+git clone https://github.com/organvm-iii-ergon/specvla-ergon--avditor-mvndi.git
+cd specvla-ergon--avditor-mvndi
 npm install
 
 # 2. Configure Environment
@@ -29,7 +29,7 @@ Visit `http://localhost:3000` to begin your first manifestation.
 
 ---
 
-## 🌌 Core Pillars
+## Core Pillars
 
 - **Mercury (Communication):** Content clarity and persuasive alignment.
 - **Venus (Aesthetic):** Visual harmony and brand attraction.
@@ -38,7 +38,7 @@ Visit `http://localhost:3000` to begin your first manifestation.
 
 ---
 
-## 🛠️ Advanced Features
+## Advanced Features
 
 - **LLM-as-a-Judge:** Automated quality evaluation loop for every audit.
 - **The Growth Vault:** Gated library of proprietary strategies and templates.
@@ -49,7 +49,7 @@ Visit `http://localhost:3000` to begin your first manifestation.
 
 ---
 
-## 📐 Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -68,7 +68,7 @@ graph TD
 
 ---
 
-## 🧪 Modular Testament (1:X Testing)
+## Modular Testament (1:X Testing)
 
 The project adheres to strict modular design principles. Every service and component is self-contained and rigorously tested.
 
@@ -82,7 +82,7 @@ npm run test:e2e
 
 ---
 
-## 🗺️ Roadmap to Omega
+## Roadmap to Omega
 
 The strategic evolution from functional utility to a "Diamond State" ecosystem is documented in our [Path to Omega](.claude/plans/2026-03-21-path-to-omega.md).
 

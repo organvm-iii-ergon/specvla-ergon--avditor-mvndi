@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Growth Auditor AI — a multi-tenant SaaS platform that performs AI-powered website growth audits. Users submit a URL and receive a structured audit scored across four "pillars" (Mercury/Communication, Venus/Aesthetic, Mars/Drive, Saturn/Structure). Built for creators, agencies, and consultants.
+Specvla Ergon — Avditor Mvndi: a multi-tenant SaaS platform that performs AI-powered website growth audits. Users submit a URL and receive a structured audit scored across four "pillars" (Mercury/Communication, Venus/Aesthetic, Mars/Drive, Saturn/Structure). Built for creators, agencies, and consultants.
 
-Production URL: https://growth-auditor.vercel.app
+Production URL: https://specvla-ergon-avditor-mvndi.vercel.app
 
 ## Commands
 

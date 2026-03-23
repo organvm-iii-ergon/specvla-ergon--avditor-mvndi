@@ -1,5 +1,5 @@
 schema_version: '1.0'
-repo: growth-auditor
+repo: specvla-ergon--avditor-mvndi
 organ: DWV
 mirrors:
   technical:
@@ -53,5 +53,5 @@ mirrors:
     - js-dep
   parallel: []
   kinship: []
-ledger: ~/.growth-auditor/network/ledger.jsonl
+ledger: ~/.specvla-ergon--avditor-mvndi/network/ledger.jsonl
 last_scanned: '2026-03-20T11:55:26.315380+00:00'

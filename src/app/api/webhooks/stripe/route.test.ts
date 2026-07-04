@@ -172,6 +172,58 @@ describe("POST /api/webhooks/stripe", () => {
     consoleSpy.mockRestore();
   });
 
+  it("handles active customer.subscription.created events", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const event = {
+      type: "customer.subscription.created",
+      data: {
+        object: {
+          metadata: { userEmail: "created@test.com", plan: "premium" },
+          status: "active",
+          items: { data: [{ price: { id: "price_unknown" } }] },
+        },
+      },
+    };
+
+    const res = await POST(makeWebhookRequest(event));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.received).toBe(true);
+    expect(updateSubscription).toHaveBeenCalledWith(
+      "created@test.com",
+      "premium",
+      "active"
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Subscription created for",
+      "created@test.com"
+    );
+
+    consoleSpy.mockRestore();
+  });
+
+  it("ignores incomplete customer.subscription.created events", async () => {
+    const event = {
+      type: "customer.subscription.created",
+      data: {
+        object: {
+          metadata: { userEmail: "pending@test.com", plan: "pro" },
+          status: "incomplete",
+          items: { data: [{ price: { id: "price_unknown" } }] },
+        },
+      },
+    };
+
+    const res = await POST(makeWebhookRequest(event));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.received).toBe(true);
+    expect(updateSubscription).not.toHaveBeenCalled();
+  });
+
   it("returns { received: true } for unhandled event types", async () => {
     const event = {
       type: "invoice.payment_succeeded",

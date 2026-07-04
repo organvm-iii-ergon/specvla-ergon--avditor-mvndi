@@ -11,6 +11,15 @@ import {
 import { ScheduleSchema } from "@/lib/schemas";
 import { getEffectivePlan, getEntitlements } from "@/lib/plans";
 
+type ScheduleSession = {
+  user?: {
+    plan?: string | null;
+    isAdmin?: boolean;
+    isPro?: boolean;
+    isPremium?: boolean;
+  } | null;
+} | null;
+
 async function canAccessSchedule(id: string, userEmail: string) {
   const schedule = await getScheduledAuditById(id);
   if (!schedule) return false;
@@ -22,7 +31,7 @@ async function canAccessSchedule(id: string, userEmail: string) {
   return false;
 }
 
-function canUseScheduledAudits(session: Awaited<ReturnType<typeof auth>>): boolean {
+function canUseScheduledAudits(session: ScheduleSession): boolean {
   if (!session?.user) return false;
   const plan = getEffectivePlan(session.user.plan, {
     isAdmin: session.user.isAdmin,

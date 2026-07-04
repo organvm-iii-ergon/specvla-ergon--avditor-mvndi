@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { updateSubscription } from "@/lib/db";
-import { normalizePlanId, resolvePlanFromPriceId } from "@/lib/plans";
+import {
+  isActiveSubscriptionStatus,
+  normalizePlanId,
+  resolvePlanFromPriceId,
+} from "@/lib/plans";
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder";
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder";
@@ -133,10 +137,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (
-    event.type === "customer.subscription.created"
-    || event.type === "customer.subscription.updated"
-  ) {
+  if (event.type === "customer.subscription.updated") {
     const subscription = event.data.object as Stripe.Subscription;
     const email = await getSubscriptionEmail(subscription);
 
@@ -145,6 +146,18 @@ export async function POST(req: Request) {
       const status = subscription.status;
       await updateSubscription(email, plan, status);
       console.log("Subscription updated for", email);
+    }
+  }
+
+  if (event.type === "customer.subscription.created") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const email = await getSubscriptionEmail(subscription);
+    const status = subscription.status;
+
+    if (email && isActiveSubscriptionStatus(status)) {
+      const plan = getSubscriptionPlan(subscription);
+      await updateSubscription(email, plan, status);
+      console.log("Subscription created for", email);
     }
   }
 

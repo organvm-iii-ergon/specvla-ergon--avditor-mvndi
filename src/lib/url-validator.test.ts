@@ -34,10 +34,10 @@ describe("validateExternalUrl", () => {
     );
   });
 
-  it("does not block ::1 — URL.hostname returns '[::1]' not '::1', a known gap in the implementation", () => {
-    // The source checks hostname === '::1' but URL.hostname for http://[::1]/ returns '[::1]'
-    // (with square brackets), so this check never fires. Document the actual behavior.
-    expect(() => validateExternalUrl("http://[::1]/")).not.toThrow();
+  it("blocks IPv6 loopback", () => {
+    expect(() => validateExternalUrl("http://[::1]/")).toThrow(
+      "Loopback addresses are not allowed"
+    );
   });
 
   it("blocks 10.x.x.x (private range)", () => {
@@ -76,18 +76,16 @@ describe("validateExternalUrl", () => {
     );
   });
 
-  it("does not block file:// — the scheme is rewritten to https:// because it does not start with 'http'", () => {
-    // 'file:///etc/passwd' does not start with 'http', so the validator prepends 'https://'
-    // producing 'https://file:///etc/passwd'. The parsed hostname becomes 'file', which is not
-    // a blocked pattern. Document the actual (permissive) behavior rather than asserting a
-    // throw that never occurs.
-    expect(() => validateExternalUrl("file:///etc/passwd")).not.toThrow();
+  it("blocks file:// URLs before scheme normalization", () => {
+    expect(() => validateExternalUrl("file:///etc/passwd")).toThrow(
+      "Only HTTP(S) URLs are allowed"
+    );
   });
 
-  it("does not block ftp:// — the scheme is rewritten to https:// because it does not start with 'http'", () => {
-    // Same rewriting as file:// — 'ftp://example.com' becomes 'https://ftp://example.com',
-    // which parses with hostname 'ftp'. This is a known gap in the implementation.
-    expect(() => validateExternalUrl("ftp://example.com/file.txt")).not.toThrow();
+  it("blocks ftp:// URLs before scheme normalization", () => {
+    expect(() => validateExternalUrl("ftp://example.com/file.txt")).toThrow(
+      "Only HTTP(S) URLs are allowed"
+    );
   });
 
   it("throws on an unparseable URL", () => {

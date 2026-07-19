@@ -3,7 +3,12 @@
  * Blocks private IPs, loopback, and non-HTTP schemes.
  */
 export function validateExternalUrl(input: string): string {
-  const url = input.startsWith('http') ? input : `https://${input}`;
+  const trimmedInput = input.trim();
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmedInput) && !/^https?:\/\//i.test(trimmedInput)) {
+    throw new Error('Only HTTP(S) URLs are allowed');
+  }
+
+  const url = /^https?:\/\//i.test(trimmedInput) ? trimmedInput : `https://${trimmedInput}`;
 
   let parsed: URL;
   try {
@@ -16,10 +21,17 @@ export function validateExternalUrl(input: string): string {
     throw new Error('Only HTTP(S) URLs are allowed');
   }
 
-  const hostname = parsed.hostname;
+  const hostname = parsed.hostname.toLowerCase();
+  const bareHostname = hostname.replace(/^\[|\]$/g, '');
 
   // Block loopback
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
+  if (
+    bareHostname === 'localhost' ||
+    bareHostname === '127.0.0.1' ||
+    bareHostname === '::1' ||
+    bareHostname === '0:0:0:0:0:0:0:1' ||
+    bareHostname === '0.0.0.0'
+  ) {
     throw new Error('Loopback addresses are not allowed');
   }
 

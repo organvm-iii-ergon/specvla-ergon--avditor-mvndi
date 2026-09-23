@@ -17,12 +17,12 @@ test.describe("Audit Flow", () => {
   });
 
   test("redirects to results when API key is set", async ({ page }) => {
-    // Set API key via localStorage
-    await page.goto("/");
-    await page.evaluate(() => {
+    await page.addInitScript(() => {
+      localStorage.setItem("ai_provider", "gemini");
       localStorage.setItem("gemini_api_key", "test-key-123");
     });
-    await page.reload();
+
+    await page.goto("/");
 
     await page.getByRole("button", { name: /Initiate Alignment/i }).click();
     await page.locator("#link").fill("https://example.com");
@@ -31,11 +31,11 @@ test.describe("Audit Flow", () => {
 
     await page.getByRole("button", { name: /Generate Strategic Audit/i }).click();
 
-    // Should navigate to /results
+    await page.waitForURL(/\/results/, { timeout: 20000 });
     await expect(page).toHaveURL(/\/results/);
   });
 
-  test("results page shows error when accessed directly", async ({ page }) => {
+  test("results page shows error when accessed directly without data", async ({ page }) => {
     await page.goto("/results");
 
     await expect(

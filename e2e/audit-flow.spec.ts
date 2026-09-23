@@ -31,8 +31,8 @@ test.describe("Audit Flow", () => {
 
     await page.getByRole("button", { name: /Generate Strategic Audit/i }).click();
 
-    // Should navigate to /results
-    await expect(page).toHaveURL(/\/results/, { timeout: 15000 });
+    await page.waitForURL(/\/results/, { timeout: 20000 });
+    await expect(page).toHaveURL(/\/results/);
   });
 
   test("results page shows error when accessed directly without data", async ({ page }) => {

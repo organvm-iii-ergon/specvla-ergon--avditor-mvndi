@@ -99,6 +99,8 @@ export default function HomePage() {
             return (
               <button
                 key={p.name}
+                aria-expanded={isActive}
+                aria-controls="pillar-detail-panel"
                 onClick={() => setActivePillar(isActive ? null : p.name)}
                 className="card"
                 style={{
@@ -129,14 +131,20 @@ export default function HomePage() {
         {activePillar && (() => {
           const p = PILLARS.find(x => x.name === activePillar)!;
           return (
-            <div className="card" style={{
-              marginBottom: "1.5rem",
-              padding: "1.25rem 1.5rem",
-              borderRadius: "14px",
-              borderLeft: `3px solid ${p.color}`,
-              animation: "fadeIn 0.3s ease-out",
-              textAlign: "left",
-            }}>
+            <div
+              id="pillar-detail-panel"
+              role="region"
+              aria-label={`${p.name} Pillar Detail`}
+              className="card"
+              style={{
+                marginBottom: "1.5rem",
+                padding: "1.25rem 1.5rem",
+                borderRadius: "14px",
+                borderLeft: `3px solid ${p.color}`,
+                animation: "fadeIn 0.3s ease-out",
+                textAlign: "left",
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
                 <div style={{ width: "24px", height: "24px" }}><TransparentIcon type={p.icon} size="100%" /></div>
                 <span style={{ fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.15em", color: p.color }}>{p.name} — {p.desc}</span>

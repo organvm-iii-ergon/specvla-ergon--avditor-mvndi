@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Link from "next/link";
 import { auth, signIn, signOut } from "@/auth";
@@ -6,6 +6,11 @@ import { PostHogProvider } from "@/providers/PostHogProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { AmbientResonanceProvider } from "@/components/AmbientResonance";
 import ClientBackground from "@/components/ClientBackground";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+
+export const viewport: Viewport = {
+  themeColor: "#090a0f",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -13,6 +18,16 @@ export const metadata: Metadata = {
     template: "%s | Avditor Mvndi",
   },
   description: "Decode your digital bottlenecks and align your business strategy with data-driven, cosmic growth audits powered by AI.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Avditor Mvndi",
+  },
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://specvla-ergon-avditor-mvndi.vercel.app"),
   openGraph: {
     title: "Avditor Mvndi",
@@ -40,6 +55,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
+        <ServiceWorkerRegister />
         <ClientBackground />
         <AmbientResonanceProvider>
           <AuthProvider>

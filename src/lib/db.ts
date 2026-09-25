@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 export interface ScheduledAuditRecord {
@@ -81,7 +80,7 @@ const mem = {
 // ──────────────────────────────────────────────
 
 export async function saveApiToken(email: string, name: string, token: string) { // allow-secret
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("api_tokens").insert([{ id, userEmail: email, name, token }]);
     if (error) throw new Error(error.message);
@@ -112,7 +111,7 @@ export async function getUserByToken(token: string) { // allow-secret
 // ──────────────────────────────────────────────
 
 export async function saveIntegration(email: string, name: string, url: string, event: string) {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("integrations").insert([{ id, userEmail: email, name, url, event }]);
     if (error) throw new Error(error.message);
@@ -165,7 +164,7 @@ export async function deleteUserData(email: string) {
 // ──────────────────────────────────────────────
 
 export async function saveFeedback(feedback: { auditId: string; userEmail?: string; section?: string; score: number; comment?: string }) {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("audit_feedback").insert([{ id, ...feedback }]);
     if (error) throw new Error(error.message);
@@ -260,14 +259,14 @@ export async function deleteAudit(id: string): Promise<void> {
 // ──────────────────────────────────────────────
 
 export async function createTeam(name: string, ownerEmail: string): Promise<TeamRecord> {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("teams").insert([{ id, name, ownerEmail }]);
     if (error) throw new Error(error.message);
-    await supabase.from("team_members").insert([{ id: crypto.randomUUID(), teamId: id, email: ownerEmail, role: "owner" }]);
+    await supabase.from("team_members").insert([{ id: globalThis.crypto.randomUUID(), teamId: id, email: ownerEmail, role: "owner" }]);
   } else {
     mem.teams.set(id, { id, name, ownerEmail, createdAt: new Date().toISOString() });
-    const mid = crypto.randomUUID();
+    const mid = globalThis.crypto.randomUUID();
     mem.members.set(mid, { id: mid, teamId: id, email: ownerEmail, role: "owner", createdAt: new Date().toISOString() });
   }
   return { id, name, ownerEmail };
@@ -287,7 +286,7 @@ export async function getTeamsByEmail(email: string): Promise<TeamRecord[]> {
 }
 
 export async function addTeamMember(teamId: string, email: string, role: "admin" | "member" = "member"): Promise<void> {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("team_members").insert([{ id, teamId, email, role }]);
     if (error) throw new Error(error.message);
@@ -319,7 +318,7 @@ export async function getLeads(): Promise<LeadRecord[]> {
 }
 
 export async function saveLead(email: string, auditId?: string, source: string = "audit_gate"): Promise<void> {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("leads").insert([{ id, email, auditId, source }]);
     if (error) throw new Error(error.message);
@@ -346,7 +345,7 @@ export async function getScheduledAudits(userEmail?: string): Promise<ScheduledA
 }
 
 export async function saveScheduledAudit(record: Omit<ScheduledAuditRecord, "id" | "createdAt">): Promise<string> {
-  const id = crypto.randomUUID();
+  const id = globalThis.crypto.randomUUID();
   if (supabase) {
     const { error } = await supabase.from("scheduled_audits").insert([{ id, ...record, teamId: record.teamId || null, lastRunAt: record.lastRunAt || null }]);
     if (error) throw new Error(error.message);

@@ -6,6 +6,8 @@ vi.mock("@/auth", () => ({
 
 import middleware, { config } from "./middleware";
 
+type MiddlewareFn = (req: unknown, ctx: unknown) => unknown;
+
 describe("Middleware", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,7 +40,8 @@ describe("Middleware", () => {
         auth: null,
       };
 
-      const response = middleware(mockReq as any, {} as any);
+      const fn = middleware as unknown as MiddlewareFn;
+      const response = fn(mockReq, {});
       expect(response).toBeInstanceOf(Response);
       expect((response as Response).status).toBe(302);
       expect((response as Response).headers.get("Location")).toBe(
@@ -56,7 +59,8 @@ describe("Middleware", () => {
       auth: { user: { email: "admin@example.com" } },
     };
 
-    const response = middleware(mockReq as any, {} as any);
+    const fn = middleware as unknown as MiddlewareFn;
+    const response = fn(mockReq, {});
     expect(response).toBeUndefined();
   });
 
@@ -69,7 +73,8 @@ describe("Middleware", () => {
       auth: null,
     };
 
-    const response = middleware(mockReq as any, {} as any);
+    const fn = middleware as unknown as MiddlewareFn;
+    const response = fn(mockReq, {});
     expect(response).toBeUndefined();
   });
 });

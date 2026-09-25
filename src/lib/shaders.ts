@@ -164,8 +164,8 @@ export async function getCachedShaderSource(): Promise<{
   vertex: string;
   fragment: string;
 }> {
-  let vertex = VERTEX_SHADER;
-  let fragment = FRAGMENT_SHADER;
+  const vertex = VERTEX_SHADER;
+  const fragment = FRAGMENT_SHADER;
 
   try {
     if (typeof caches !== "undefined") {

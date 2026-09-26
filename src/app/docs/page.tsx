@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "API Documentation",
-  description: "Avditor Mvndi API reference for developers.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "API Documentation",
+    description: "Avditor Mvndi API reference for developers.",
+    openGraph: {
+      title: "API Documentation | Avditor Mvndi",
+      description: "Avditor Mvndi API reference for developers.",
+      images: ["/api/og?domain=API%20Documentation"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "API Documentation | Avditor Mvndi",
+      description: "Avditor Mvndi API reference for developers.",
+    },
+  };
+}
 
 export default function DocsPage() {
   return (

@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Case Studies",
-  description: "See how Avditor Mvndi decodes top brands with cosmic growth strategy.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Case Studies",
+    description: "See how Avditor Mvndi decodes top brands with cosmic growth strategy.",
+    openGraph: {
+      title: "Case Studies | Avditor Mvndi",
+      description: "See how Avditor Mvndi decodes top brands with cosmic growth strategy.",
+      images: ["/api/og?domain=Case%20Studies"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Case Studies | Avditor Mvndi",
+      description: "See how Avditor Mvndi decodes top brands with cosmic growth strategy.",
+    },
+  };
+}
 
 export default function ExamplesPage() {
   return (

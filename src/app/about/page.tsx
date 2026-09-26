@@ -1,10 +1,22 @@
 import type { Metadata } from "next";
 import CosmicIcon, { IconType } from "@/components/CosmicIcons";
 
-export const metadata: Metadata = {
-  title: "Methodology",
-  description: "The Four Pillars of Cosmic Alignment: Mercury, Venus, Mars, and Saturn. How Avditor Mvndi decodes digital bottlenecks.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Methodology",
+    description: "The Four Pillars of Cosmic Alignment: Mercury, Venus, Mars, and Saturn. How Avditor Mvndi decodes digital bottlenecks.",
+    openGraph: {
+      title: "Methodology | Avditor Mvndi",
+      description: "The Four Pillars of Cosmic Alignment: Mercury, Venus, Mars, and Saturn. How Avditor Mvndi decodes digital bottlenecks.",
+      images: ["/api/og?domain=Methodology"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Methodology | Avditor Mvndi",
+      description: "The Four Pillars of Cosmic Alignment: Mercury, Venus, Mars, and Saturn. How Avditor Mvndi decodes digital bottlenecks.",
+    },
+  };
+}
 
 const PILLARS = [
   { name: "Mercury", icon: "mercury", color: "#7000ff", label: "Communication", desc: "How clearly does your website communicate its value? We analyze copy density and messaging alignment." },
